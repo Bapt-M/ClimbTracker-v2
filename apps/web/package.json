@@ -13,6 +13,7 @@
     "@climbtracker/auth": "workspace:*",
     "@climbtracker/ui": "workspace:*",
     "@tanstack/react-query": "^5.60.0",
+    "better-auth": "^1.2.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-router-dom": "^6.28.0",

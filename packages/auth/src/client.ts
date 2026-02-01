@@ -1,7 +1,17 @@
-// Better Auth client configuration
-// Will be implemented in Phase 2
+import { createAuthClient } from 'better-auth/react';
 
-export const createAuthClient = () => {
-  // Placeholder for Better Auth client
-  return {};
-};
+export interface AuthClientConfig {
+  baseURL: string;
+}
+
+export function createClimbTrackerAuthClient(config: AuthClientConfig) {
+  return createAuthClient({
+    baseURL: config.baseURL,
+  });
+}
+
+// Type exports for use in React components
+export type AuthClient = ReturnType<typeof createClimbTrackerAuthClient>;
+
+// Re-export useful types from better-auth
+export type { Session, User } from 'better-auth/types';

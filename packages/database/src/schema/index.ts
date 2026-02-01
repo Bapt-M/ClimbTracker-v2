@@ -1,8 +1,13 @@
 // Enums
 export * from './enums';
 
-// Tables
+// Better Auth tables
 export * from './users';
+export * from './sessions';
+export * from './accounts';
+export * from './verifications';
+
+// ClimbTracker tables
 export * from './routes';
 export * from './validations';
 export * from './comments';
