@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, timestamp, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { routeStatusEnum, difficultyColorEnum, holdColorCategoryEnum } from './enums';
 import { users } from './users';
@@ -7,7 +7,7 @@ import { comments } from './comments';
 import { analyses } from './analyses';
 
 export const routes = pgTable('routes', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   difficulty: difficultyColorEnum('difficulty').notNull(),
   holdColorHex: varchar('hold_color_hex', { length: 50 }).notNull(), // Hex color of holds, e.g., #FF5733
@@ -16,7 +16,7 @@ export const routes = pgTable('routes', {
   routeTypes: jsonb('route_types').$type<string[]>(), // Array of route characteristics (réglette, dévers, etc.)
   description: text('description'),
   tips: text('tips'),
-  openerId: uuid('opener_id').notNull().references(() => users.id),
+  openerId: text('opener_id').notNull().references(() => users.id),
   mainPhoto: varchar('main_photo', { length: 255 }).notNull(),
   openingVideo: varchar('opening_video', { length: 255 }),
   status: routeStatusEnum('status').notNull().default('PENDING'),

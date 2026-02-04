@@ -1,11 +1,11 @@
-import { pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users';
 
 // Better Auth accounts table (handles email/password and OAuth providers)
 export const accounts = pgTable('accounts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   accountId: varchar('account_id', { length: 255 }).notNull(), // Provider-specific account ID
   providerId: varchar('provider_id', { length: 255 }).notNull(), // 'credential', 'google', 'github', etc.
 

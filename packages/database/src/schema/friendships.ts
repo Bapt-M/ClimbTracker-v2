@@ -1,12 +1,12 @@
-import { pgTable, uuid, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { friendshipStatusEnum } from './enums';
 import { users } from './users';
 
 export const friendships = pgTable('friendships', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  requesterId: uuid('requester_id').notNull().references(() => users.id), // Celui qui envoie la demande
-  addresseeId: uuid('addressee_id').notNull().references(() => users.id), // Celui qui reçoit la demande
+  id: text('id').primaryKey(),
+  requesterId: text('requester_id').notNull().references(() => users.id), // Celui qui envoie la demande
+  addresseeId: text('addressee_id').notNull().references(() => users.id), // Celui qui reçoit la demande
   status: friendshipStatusEnum('status').notNull().default('PENDING'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   acceptedAt: timestamp('accepted_at'),

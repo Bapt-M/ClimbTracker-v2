@@ -1,13 +1,13 @@
-import { pgTable, uuid, text, timestamp, integer, boolean, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, boolean, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { validationStatusEnum } from './enums';
 import { users } from './users';
 import { routes } from './routes';
 
 export const validations = pgTable('validations', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id),
-  routeId: uuid('route_id').notNull().references(() => routes.id),
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id),
+  routeId: text('route_id').notNull().references(() => routes.id),
   validatedAt: timestamp('validated_at').notNull().defaultNow(),
   personalNote: text('personal_note'),
   status: validationStatusEnum('status').notNull().default('EN_PROJET'),

@@ -1,18 +1,16 @@
+import { env } from '../env';
 import { createAuth } from '@climbtracker/auth';
 import { createConnection } from '@climbtracker/database';
 
-// Database connection
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://climbtracker:climbtracker@localhost:5433/climbtracker';
-export const db = createConnection(DATABASE_URL);
+// Database connection using env loaded from .env
+export const db = createConnection(env.DATABASE_URL);
 
 // Auth configuration
 export const auth = createAuth({
   db,
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
-  secret: process.env.BETTER_AUTH_SECRET || 'development-secret-change-in-production',
-  trustedOrigins: [
-    process.env.FRONTEND_URL || 'http://localhost:5173',
-  ],
+  baseURL: env.BETTER_AUTH_URL,
+  secret: env.BETTER_AUTH_SECRET,
+  trustedOrigins: [env.FRONTEND_URL],
 });
 
 export type Session = typeof auth.$Infer.Session;

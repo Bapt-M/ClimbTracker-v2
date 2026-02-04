@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, integer, timestamp, jsonb, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, integer, timestamp, jsonb, boolean } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { userRoleEnum } from './enums';
 import { routes } from './routes';
@@ -10,8 +10,8 @@ import { sessions } from './sessions';
 import { accounts } from './accounts';
 
 export const users = pgTable('users', {
-  // Better Auth required fields
-  id: uuid('id').primaryKey().defaultRandom(),
+  // Better Auth required fields (text ID for Better Auth compatibility)
+  id: text('id').primaryKey(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   emailVerified: boolean('email_verified').notNull().default(false),
   name: varchar('name', { length: 255 }).notNull(),

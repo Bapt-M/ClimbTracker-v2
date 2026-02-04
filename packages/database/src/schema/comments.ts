@@ -1,14 +1,14 @@
-import { pgTable, uuid, text, varchar, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { mediaTypeEnum } from './enums';
 import { users } from './users';
 import { routes } from './routes';
 
 export const comments = pgTable('comments', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id').primaryKey(),
   content: text('content').notNull(),
-  userId: uuid('user_id').notNull().references(() => users.id),
-  routeId: uuid('route_id').notNull().references(() => routes.id),
+  userId: text('user_id').notNull().references(() => users.id),
+  routeId: text('route_id').notNull().references(() => routes.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   mediaUrl: varchar('media_url', { length: 255 }),
   mediaType: mediaTypeEnum('media_type'),

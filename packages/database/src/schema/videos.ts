@@ -1,14 +1,14 @@
-import { pgTable, uuid, varchar, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users';
 import { analyses } from './analyses';
 
 export const videos = pgTable('videos', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id').primaryKey(),
   url: varchar('url', { length: 255 }).notNull(),
   thumbnailUrl: varchar('thumbnail_url', { length: 255 }).notNull(),
-  userId: uuid('user_id').notNull().references(() => users.id),
-  routeId: uuid('route_id').notNull(),
+  userId: text('user_id').notNull().references(() => users.id),
+  routeId: text('route_id').notNull(),
   uploadedAt: timestamp('uploaded_at').notNull().defaultNow(),
 });
 

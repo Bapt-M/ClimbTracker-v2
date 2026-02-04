@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, boolean, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, boolean, timestamp, jsonb } from 'drizzle-orm/pg-core';
 
 // Sector mapping type
 export type SectorMapping = {
@@ -10,7 +10,7 @@ export type SectorMapping = {
 };
 
 export const gymLayouts = pgTable('gym_layouts', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull().unique(), // e.g., 'main_gym', 'training_area'
   svgContent: text('svg_content').notNull(), // Raw SVG markup
   sectorMappings: jsonb('sector_mappings').$type<SectorMapping>(), // Mapping of sectors to SVG elements

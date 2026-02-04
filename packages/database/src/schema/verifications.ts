@@ -1,8 +1,8 @@
-import { pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core';
 
 // Better Auth verifications table (email verification, password reset, etc.)
 export const verifications = pgTable('verifications', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id').primaryKey(),
   identifier: varchar('identifier', { length: 255 }).notNull(), // Email or other identifier
   value: text('value').notNull(), // Verification token/code
   expiresAt: timestamp('expires_at').notNull(),
