@@ -24,10 +24,7 @@ export const PLANS = {
     name: 'Gratuit',
     price: 0,
     features: [
-      'Suivi de 50 voies max',
-      'Statistiques de base',
-      '1 gym layout',
-      'Classement global',
+      "C'est gratuit",
     ],
   },
   PREMIUM: {
@@ -36,12 +33,8 @@ export const PLANS = {
     priceId: process.env.STRIPE_PRICE_ID || '',
     price: 4.99,
     features: [
-      'Suivi illimité de voies',
       'Analytics avancées',
-      'Gym layouts illimités',
       'Export de données',
-      'Classement amis',
-      'Support prioritaire',
       'Badge Premium',
     ],
   },

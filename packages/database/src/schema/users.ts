@@ -28,6 +28,13 @@ export const users = pgTable('users', {
   profilePhoto: varchar('profile_photo', { length: 255 }), // Cloudinary URL
   additionalPhotos: jsonb('additional_photos').$type<string[]>(), // Array of Cloudinary URLs
 
+  // Stripe subscription fields
+  stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
+  stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
+  stripePriceId: varchar('stripe_price_id', { length: 255 }),
+  stripeCurrentPeriodEnd: timestamp('stripe_current_period_end'),
+  isPremium: boolean('is_premium').notNull().default(false),
+
   // Timestamps
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),

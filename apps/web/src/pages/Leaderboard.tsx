@@ -112,7 +112,7 @@ export default function Leaderboard() {
             onClick={() => setActiveTab('global')}
             className={`px-5 py-2 rounded-full text-sm font-extrabold uppercase tracking-wide transition-all ${
               activeTab === 'global'
-                ? 'bg-hold-yellow text-climb-dark border-2 border-climb-dark shadow-neo-sm'
+                ? 'bg-hold-purple text-climb-dark border-2 border-climb-dark shadow-neo-sm'
                 : 'bg-white text-climb-dark/60 border-2 border-climb-dark/20 hover:border-climb-dark/40'
             }`}
           >
@@ -125,7 +125,7 @@ export default function Leaderboard() {
             onClick={() => setActiveTab('friends')}
             className={`px-5 py-2 rounded-full text-sm font-extrabold uppercase tracking-wide transition-all ${
               activeTab === 'friends'
-                ? 'bg-hold-purple text-white border-2 border-climb-dark shadow-neo-sm'
+                ? 'bg-hold-yellow text-black border-2 border-climb-dark shadow-neo-sm'
                 : 'bg-white text-climb-dark/60 border-2 border-climb-dark/20 hover:border-climb-dark/40'
             }`}
           >

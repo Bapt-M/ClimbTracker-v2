@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { db } from '../lib/auth';
-import { validations, routes } from '@climbtracker/database/schema';
+import { validations } from '@climbtracker/database/schema';
 import { requireAuth } from '../middleware/auth';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
 const app = new Hono();
 
@@ -32,6 +32,24 @@ app.get('/', requireAuth, async (c) => {
   });
 
   return c.json({ success: true, data: { validations: userValidations } });
+});
+
+// GET /api/validations/user - Alias for getting current user's validations (flat array response)
+app.get('/user', requireAuth, async (c) => {
+  const user = c.get('user');
+
+  const userValidations = await db.query.validations.findMany({
+    where: eq(validations.userId, user.id),
+    with: {
+      route: {
+        columns: { id: true, name: true, difficulty: true, sector: true, mainPhoto: true, status: true },
+      },
+    },
+    orderBy: [desc(validations.validatedAt)],
+  });
+
+  // Return flat array for frontend compatibility
+  return c.json(userValidations);
 });
 
 // GET /api/validations/route/:routeId - Get all validations for a route

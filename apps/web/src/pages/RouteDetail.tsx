@@ -102,8 +102,9 @@ export default function RouteDetail() {
     if (!id) return;
 
     try {
-      const updated = await routesAPI.updateRouteStatus(id, status);
-      setRoute(updated);
+      await routesAPI.updateRouteStatus(id, status);
+      // Reload full route data to get all relations
+      await loadRoute();
     } catch (err: any) {
       alert(err.message || 'Failed to update status');
     }

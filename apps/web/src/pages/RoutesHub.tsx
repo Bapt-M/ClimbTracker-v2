@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { routesAPI, Route, RouteFilters } from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
 import { BottomNav } from '../components/BottomNav';
-import { RouteCardWithStatus } from '../components/RouteCardWithStatus';
+import { RouteCardWithStatus, ValidationData } from '../components/RouteCardWithStatus';
 import { GymLayoutFilter } from '../components/GymLayoutFilter';
 import { ValidationStatusFilter } from '../components/ValidationStatusFilter';
 import { GradeFilter } from '../components/GradeFilter';
@@ -58,6 +58,7 @@ export const RoutesHub = () => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [filteredRoutes, setFilteredRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>(persistedState.current.search || '');
   const [selectedSectors, setSelectedSectors] = useState<string[]>(persistedState.current.selectedSectors || []);
@@ -65,6 +66,21 @@ export const RoutesHub = () => {
   const [selectedHoldColors, setSelectedHoldColors] = useState<string[]>(persistedState.current.selectedHoldColors || []);
   const [selectedStatuses, setSelectedStatuses] = useState<ValidationStatus[]>(persistedState.current.selectedStatuses || []);
   const [userValidations, setUserValidations] = useState<any[]>([]);
+
+  // Create a map of route ID to validation data for efficient lookup
+  const validationsByRouteId = useMemo(() => {
+    const map = new Map<string, ValidationData>();
+    userValidations.forEach((v) => {
+      map.set(v.routeId, {
+        id: v.id,
+        status: v.status,
+        attempts: v.attempts,
+        isFlashed: v.isFlashed,
+        isFavorite: v.isFavorite,
+      });
+    });
+    return map;
+  }, [userValidations]);
   const [isFavoriteOnly, setIsFavoriteOnly] = useState(persistedState.current.isFavoriteOnly || false);
   const [dateFrom, setDateFrom] = useState<string | undefined>(persistedState.current.dateFrom);
   const [dateTo, setDateTo] = useState<string | undefined>(persistedState.current.dateTo);
@@ -214,16 +230,23 @@ export const RoutesHub = () => {
     setFilteredRoutes(filtered);
   }, [routes, selectedStatuses, isFavoriteOnly, userValidations]);
 
-  const loadRoutes = async () => {
+  const loadRoutes = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      // Only show full loading state on initial load, not on refresh
+      if (!isRefresh) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       const result = await routesAPI.getRoutes(filters);
-      setRoutes(result.data);
+      setRoutes(result?.data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load routes');
+      setRoutes([]);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -341,9 +364,9 @@ export const RoutesHub = () => {
               </h1>
             </div>
             <div className="flex items-center gap-1.5 mt-1 ml-12">
-              <span className="w-2 h-2 rounded-full bg-hold-green animate-pulse"></span>
+              <span className={`w-2 h-2 rounded-full ${isRefreshing ? 'bg-hold-orange animate-spin' : 'bg-hold-green animate-pulse'}`}></span>
               <p className="text-[11px] font-bold text-climb-dark/60 uppercase tracking-widest">
-                {filteredRoutes.length} voies actives
+                {isRefreshing ? 'Mise à jour...' : `${filteredRoutes.length} voies actives`}
               </p>
             </div>
           </div>
@@ -494,8 +517,9 @@ export const RoutesHub = () => {
                       key={route.id}
                       route={route}
                       viewMode={viewMode}
+                      initialValidation={validationsByRouteId.get(route.id)}
                       onStatusChange={() => {
-                        loadRoutes();
+                        // Only refresh validations - routes don't change when validating
                         loadUserValidations();
                       }}
                     />

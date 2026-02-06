@@ -9,8 +9,8 @@
       "types": "./dist/index.d.ts"
     },
     "./schema": {
-      "import": "./dist/schema/index.js",
-      "types": "./dist/schema/index.d.ts"
+      "import": "./dist/schema.js",
+      "types": "./dist/schema.d.ts"
     }
   },
   "scripts": {

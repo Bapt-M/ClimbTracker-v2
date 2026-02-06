@@ -22,12 +22,15 @@ export const UserValidationDetailsModal = ({
   }, [userId]);
 
   const loadDetails = async () => {
+    console.log('[UserValidationDetailsModal] Loading details for userId:', userId);
     try {
       setLoading(true);
       setError(null);
       const data = await leaderboardAPI.getUserValidationDetails(userId);
+      console.log('[UserValidationDetailsModal] Received data:', data);
       setDetails(data);
     } catch (err: any) {
+      console.error('[UserValidationDetailsModal] Error:', err);
       setError(err.message || 'Impossible de charger les details');
     } finally {
       setLoading(false);

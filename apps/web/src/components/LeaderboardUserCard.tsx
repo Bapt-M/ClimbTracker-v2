@@ -41,8 +41,11 @@ export const LeaderboardUserCard = ({ user, isCurrentUser = false, onShowDetails
 
   const handleDetailsClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('[LeaderboardUserCard] Details clicked for user:', user.userId, user.name);
     if (onShowDetails) {
       onShowDetails(user.userId, user.name);
+    } else {
+      console.log('[LeaderboardUserCard] onShowDetails is not defined!');
     }
   };
 

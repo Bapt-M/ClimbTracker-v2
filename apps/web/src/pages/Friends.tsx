@@ -170,7 +170,7 @@ export default function Friends() {
             onClick={() => setActiveTab('friends')}
             className={`px-4 py-2 rounded-full text-sm font-extrabold uppercase tracking-wide transition-all ${
               activeTab === 'friends'
-                ? 'bg-climb-dark text-white shadow-neo-sm'
+                ? 'bg-hold-blue text-white shadow-neo-sm'
                 : 'bg-white text-climb-dark/60 border-2 border-climb-dark/20 hover:border-climb-dark/40'
             }`}
           >
@@ -180,7 +180,7 @@ export default function Friends() {
             onClick={() => setActiveTab('requests')}
             className={`px-4 py-2 rounded-full text-sm font-extrabold uppercase tracking-wide transition-all relative ${
               activeTab === 'requests'
-                ? 'bg-climb-dark text-white shadow-neo-sm'
+                ? 'bg-hold-green text-white shadow-neo-sm'
                 : 'bg-white text-climb-dark/60 border-2 border-climb-dark/20 hover:border-climb-dark/40'
             }`}
           >
@@ -244,7 +244,7 @@ export default function Friends() {
                 {searchResults.map((user) => (
                   <div
                     key={user.id}
-                    className="flex items-center gap-4 p-4 rounded-3xl bg-white border-2 border-climb-dark shadow-neo"
+                    className="relative flex items-center gap-4 p-4 pr-28 rounded-3xl bg-white border-2 border-climb-dark shadow-neo"
                   >
                     <div
                       className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-2 border-climb-dark -rotate-3"
@@ -254,27 +254,27 @@ export default function Friends() {
                         {user.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-base font-extrabold text-climb-dark">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-extrabold text-climb-dark truncate">
                         {user.name}
                       </h3>
-                      <p className="text-xs text-climb-dark/50 font-bold">{user.email}</p>
+                      <p className="text-xs text-climb-dark/50 font-bold truncate">{user.email}</p>
                     </div>
                     {user.friendshipStatus === null && (
                       <button
                         onClick={() => handleSendRequest(user.id)}
-                        className="px-4 py-2 bg-hold-pink text-white text-xs font-extrabold rounded-xl border-2 border-climb-dark shadow-neo-sm transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                        className="absolute right-4 px-4 py-2 bg-hold-pink text-white text-xs font-extrabold rounded-xl border-2 border-climb-dark shadow-neo-sm transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
                       >
                         Ajouter
                       </button>
                     )}
                     {user.friendshipStatus === FriendshipStatus.PENDING && (
-                      <span className="px-4 py-2 bg-hold-orange/20 text-hold-orange text-xs font-extrabold rounded-xl border-2 border-hold-orange/30">
+                      <span className="absolute right-4 px-4 py-2 bg-hold-orange/20 text-hold-orange text-xs font-extrabold rounded-xl border-2 border-hold-orange/30">
                         {user.isRequester ? 'Envoyee' : 'En attente'}
                       </span>
                     )}
                     {user.friendshipStatus === FriendshipStatus.ACCEPTED && (
-                      <span className="px-4 py-2 bg-hold-green/20 text-hold-green text-xs font-extrabold rounded-xl border-2 border-hold-green/30">
+                      <span className="absolute right-4 px-4 py-2 bg-hold-green/20 text-hold-green text-xs font-extrabold rounded-xl border-2 border-hold-green/30">
                         Ami
                       </span>
                     )}

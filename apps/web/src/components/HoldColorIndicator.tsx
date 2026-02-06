@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 
 interface HoldColorIndicatorProps {
   holdColorHex: string;
@@ -43,7 +43,7 @@ function generateColorVariations(hex: string): { light: string; medium: string; 
   };
 }
 
-export const HoldColorIndicator = ({ holdColorHex, size = 80, className = '' }: HoldColorIndicatorProps) => {
+const HoldColorIndicatorComponent = ({ holdColorHex, size = 80, className = '' }: HoldColorIndicatorProps) => {
   const colors = useMemo(() => generateColorVariations(holdColorHex), [holdColorHex]);
 
   return (
@@ -126,3 +126,6 @@ export const HoldColorIndicator = ({ holdColorHex, size = 80, className = '' }: 
     </svg>
   );
 };
+
+// Memoize - only re-render if props change
+export const HoldColorIndicator = memo(HoldColorIndicatorComponent);

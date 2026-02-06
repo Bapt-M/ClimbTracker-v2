@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { db } from '../lib/auth';
 import { friendships, users } from '@climbtracker/database/schema';
 import { requireAuth } from '../middleware/auth';
-import { eq, and, or, desc, ne } from 'drizzle-orm';
+import { eq, and, or, desc, ne, sql } from 'drizzle-orm';
 
 const app = new Hono();
 
@@ -37,6 +37,57 @@ app.get('/', requireAuth, async (c) => {
   }));
 
   return c.json({ success: true, data: { friends } });
+});
+
+// GET /api/friendships/search - Search users for friend requests
+app.get('/search', requireAuth, async (c) => {
+  const user = c.get('user');
+  const { q } = c.req.query();
+
+  if (!q || q.length < 2) {
+    return c.json({ success: true, data: { users: [] } });
+  }
+
+  // Search users (excluding current user)
+  const searchResults = await db.query.users.findMany({
+    where: and(
+      ne(users.id, user.id),
+      or(
+        sql`${users.name} ILIKE ${'%' + q + '%'}`,
+        sql`${users.email} ILIKE ${'%' + q + '%'}`
+      )
+    ),
+    columns: { id: true, name: true, email: true, image: true },
+    limit: 20,
+  });
+
+  // Get existing friendships for these users
+  const userIds = searchResults.map(u => u.id);
+  const existingFriendships = userIds.length > 0 ? await db.query.friendships.findMany({
+    where: or(
+      and(eq(friendships.requesterId, user.id)),
+      and(eq(friendships.addresseeId, user.id))
+    ),
+  }) : [];
+
+  // Map results with friendship status
+  const usersWithStatus = searchResults.map(u => {
+    const friendship = existingFriendships.find(
+      f => (f.requesterId === u.id || f.addresseeId === u.id) &&
+           (f.requesterId === user.id || f.addresseeId === user.id)
+    );
+
+    return {
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      image: u.image,
+      friendshipStatus: friendship?.status?.toLowerCase() || null,
+      isRequester: friendship?.requesterId === user.id,
+    };
+  });
+
+  return c.json({ success: true, data: { users: usersWithStatus } });
 });
 
 // GET /api/friendships/pending - Get pending friend requests

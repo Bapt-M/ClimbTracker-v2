@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Route } from '../lib/api';
 import { QuickStatusMenu, ValidationStatus } from './QuickStatusMenu';
@@ -7,7 +7,7 @@ import { HoldColorIndicator } from './HoldColorIndicator';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-interface ValidationData {
+export interface ValidationData {
   id: string;
   status: ValidationStatus;
   attempts: number;
@@ -19,51 +19,32 @@ interface RouteCardWithStatusProps {
   route: Route;
   viewMode?: 'list' | 'grid';
   onStatusChange?: () => void;
+  initialValidation?: ValidationData;
 }
 
-export const RouteCardWithStatus = ({ route, viewMode = 'list', onStatusChange }: RouteCardWithStatusProps) => {
+const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange, initialValidation }: RouteCardWithStatusProps) => {
   const navigate = useNavigate();
   const [showStatusMenu, setShowStatusMenu] = useState(false);
-  const [currentValidation, setCurrentValidation] = useState<ValidationData | undefined>();
+  // Track local overrides during optimistic updates
+  const [localOverride, setLocalOverride] = useState<{ cleared: boolean } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressStartTime = useRef<number>(0);
 
+  // Derive currentValidation from props, with local override support
+  // Local override is cleared when parent data updates (initialValidation changes)
+  const prevInitialValidationId = useRef<string | undefined>(initialValidation?.id);
+
+  // Clear local override when parent data actually changes
   useEffect(() => {
-    fetchCurrentValidation();
-  }, [route.id]);
-
-  const fetchCurrentValidation = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/validations/user`, {
-        credentials: 'include',
-      });
-
-      if (!response.ok) return;
-
-      const validations = await response.json();
-
-      if (!Array.isArray(validations)) {
-        console.error('Unexpected response format:', validations);
-        return;
-      }
-
-      const validation = validations.find((v: any) => v.routeId === route.id);
-      if (validation) {
-        setCurrentValidation({
-          id: validation.id,
-          status: validation.status,
-          attempts: validation.attempts,
-          isFlashed: validation.isFlashed,
-          isFavorite: validation.isFavorite,
-        });
-      } else {
-        setCurrentValidation(undefined);
-      }
-    } catch (error) {
-      console.error('Failed to fetch validation status:', error);
+    if (prevInitialValidationId.current !== initialValidation?.id) {
+      setLocalOverride(null);
+      prevInitialValidationId.current = initialValidation?.id;
     }
-  };
+  }, [initialValidation?.id]);
+
+  // Compute current validation: use local override if set, otherwise use parent data
+  const currentValidation = localOverride?.cleared ? undefined : initialValidation;
 
   const handlePressStart = () => {
     pressStartTime.current = Date.now();
@@ -115,7 +96,8 @@ export const RouteCardWithStatus = ({ route, viewMode = 'list', onStatusChange }
           credentials: 'include',
         });
         if (response.ok) {
-          setCurrentValidation(undefined);
+          // Set local override to show as cleared immediately (optimistic update)
+          setLocalOverride({ cleared: true });
           onStatusChange?.();
         }
       } catch (error) {
@@ -295,10 +277,7 @@ export const RouteCardWithStatus = ({ route, viewMode = 'list', onStatusChange }
             routeName={route.name}
             currentValidation={currentValidation}
             onClose={handleStatusMenuClose}
-            onStatusChange={() => {
-              fetchCurrentValidation();
-              onStatusChange?.();
-            }}
+            onStatusChange={onStatusChange}
           />
         )}
       </>
@@ -385,12 +364,21 @@ export const RouteCardWithStatus = ({ route, viewMode = 'list', onStatusChange }
           routeName={route.name}
           currentValidation={currentValidation}
           onClose={handleStatusMenuClose}
-          onStatusChange={() => {
-            fetchCurrentValidation();
-            onStatusChange?.();
-          }}
+          onStatusChange={onStatusChange}
         />
       )}
     </>
   );
 };
+
+// Memoize to prevent unnecessary re-renders when parent re-renders
+export const RouteCardWithStatus = memo(RouteCardWithStatusComponent, (prevProps, nextProps) => {
+  // Custom comparison - only re-render if these specific props change
+  return (
+    prevProps.route.id === nextProps.route.id &&
+    prevProps.viewMode === nextProps.viewMode &&
+    prevProps.initialValidation?.id === nextProps.initialValidation?.id &&
+    prevProps.initialValidation?.status === nextProps.initialValidation?.status &&
+    prevProps.initialValidation?.isFavorite === nextProps.initialValidation?.isFavorite
+  );
+});

@@ -6,18 +6,23 @@ import { BottomNav } from '../components/BottomNav';
 import { KiviatChart } from '../components/KiviatChart';
 import { ProfileEditForm } from '../components/ProfileEditForm';
 import { getDifficultyColor, getDifficultyOrder } from '../utils/gradeColors';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function UserProfile() {
   const { id: userId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: session } = useSession();
   const currentUser = session?.user;
+  const { isPremium } = usePremiumStatus();
 
   const [user, setUser] = useState<UserPublicProfile | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -49,6 +54,25 @@ export default function UserProfile() {
   const handleLogout = async () => {
     await signOut();
     navigate('/login');
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      setSubscriptionLoading(true);
+      const response = await fetch(`${API_URL}/api/stripe/portal`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Failed to open billing portal:', err);
+    } finally {
+      setSubscriptionLoading(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -93,15 +117,9 @@ export default function UserProfile() {
 
   const isOwnProfile = currentUser?.id === user.id;
 
-  // Find the highest difficulty from validationsByDifficulty
-  const maxDifficulty = stats.validationsByDifficulty && stats.validationsByDifficulty.length > 0
-    ? stats.validationsByDifficulty.reduce((max, current) => {
-        return getDifficultyOrder(current.difficulty) > getDifficultyOrder(max.difficulty) ? current : max;
-      })
-    : null;
-
-  const maxGrade = maxDifficulty?.difficulty || '-';
-  const maxDifficultyColor = maxDifficulty ? getDifficultyColor(maxDifficulty.difficulty) : null;
+  // Use maxDifficulty from API (requires 3+ validations at that difficulty)
+  const maxGrade = stats.maxDifficulty || '-';
+  const maxDifficultyColor = stats.maxDifficulty ? getDifficultyColor(stats.maxDifficulty) : null;
 
   return (
     <div className="relative min-h-screen flex flex-col w-full max-w-md mx-auto overflow-hidden bg-cream">
@@ -140,11 +158,19 @@ export default function UserProfile() {
           <div className="flex items-center gap-6">
             <div className="relative">
               <div className="h-24 w-24 rounded-[2.5rem] overflow-hidden border-3 border-climb-dark bg-white rotate-3 shadow-neo">
-                <div className="absolute inset-0 bg-hold-blue flex items-center justify-center -rotate-3">
-                  <span className="text-white font-extrabold text-4xl">
-                    {user.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                {(user.profilePhoto || user.image) ? (
+                  <img
+                    src={user.profilePhoto || user.image}
+                    alt={user.name}
+                    className="h-full w-full object-cover -rotate-3"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-hold-blue flex items-center justify-center -rotate-3">
+                    <span className="text-white font-extrabold text-4xl">
+                      {user.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
               </div>
               {isOwnProfile && (
                 <button
@@ -234,6 +260,50 @@ export default function UserProfile() {
                 : 'Points calcules selon la difficulte et le nombre d\'essais'}
             </div>
           </div>
+
+          {/* Subscription Management - Only on own profile */}
+          {isOwnProfile && (
+            <div className="neo-card p-5">
+              {isPremium ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-hold-yellow flex items-center justify-center border-2 border-climb-dark">
+                      <span className="material-symbols-outlined text-climb-dark text-[20px] fill-1">workspace_premium</span>
+                    </div>
+                    <div>
+                      <p className="font-extrabold text-climb-dark">Premium</p>
+                      <p className="text-xs text-climb-dark/60">Abonnement actif</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleManageSubscription}
+                    disabled={subscriptionLoading}
+                    className="px-4 py-2 bg-climb-dark text-white rounded-xl font-bold text-sm border-2 border-climb-dark shadow-neo-sm transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-50"
+                  >
+                    {subscriptionLoading ? 'Chargement...' : 'Gerer'}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-cream flex items-center justify-center border-2 border-climb-dark/20">
+                      <span className="material-symbols-outlined text-climb-dark/40 text-[20px]">workspace_premium</span>
+                    </div>
+                    <div>
+                      <p className="font-extrabold text-climb-dark">Gratuit</p>
+                      <p className="text-xs text-climb-dark/60">Passez a Premium</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => navigate('/pricing')}
+                    className="px-4 py-2 bg-hold-yellow text-climb-dark rounded-xl font-bold text-sm border-2 border-climb-dark shadow-neo-sm transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                  >
+                    Devenir Premium
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Points System Explanation */}
           <div className="flex flex-col gap-4">

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { db } from '../lib/auth';
-import { routes, validations, comments, users } from '@climbtracker/database/schema';
+import { routes, validations, comments } from '@climbtracker/database/schema';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { eq, and, or, like, desc, asc, gte, lte, inArray, sql } from 'drizzle-orm';
 
@@ -9,10 +9,6 @@ const app = new Hono();
 // GET /api/routes - List routes with filters
 app.get('/', requireAuth, async (c) => {
   const {
-    difficulty,
-    holdColorCategory,
-    sector,
-    status,
     search,
     page = '1',
     limit = '12',
@@ -22,6 +18,12 @@ app.get('/', requireAuth, async (c) => {
     openedAtTo
   } = c.req.query();
 
+  // Use queries() for params that can have multiple values
+  const difficulties = c.req.queries('difficulty');
+  const holdColorCategories = c.req.queries('holdColorCategory');
+  const sectors = c.req.queries('sector');
+  const statuses = c.req.queries('status');
+
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
   const offset = (pageNum - 1) * limitNum;
@@ -29,23 +31,19 @@ app.get('/', requireAuth, async (c) => {
   // Build where conditions
   const conditions = [];
 
-  if (difficulty) {
-    const difficulties = Array.isArray(difficulty) ? difficulty : [difficulty];
+  if (difficulties && difficulties.length > 0) {
     conditions.push(inArray(routes.difficulty, difficulties as any));
   }
 
-  if (holdColorCategory) {
-    const categories = Array.isArray(holdColorCategory) ? holdColorCategory : [holdColorCategory];
-    conditions.push(inArray(routes.holdColorCategory, categories as any));
+  if (holdColorCategories && holdColorCategories.length > 0) {
+    conditions.push(inArray(routes.holdColorCategory, holdColorCategories as any));
   }
 
-  if (sector) {
-    const sectors = Array.isArray(sector) ? sector : [sector];
+  if (sectors && sectors.length > 0) {
     conditions.push(inArray(routes.sector, sectors));
   }
 
-  if (status) {
-    const statuses = Array.isArray(status) ? status : [status];
+  if (statuses && statuses.length > 0) {
     conditions.push(inArray(routes.status, statuses as any));
   } else {
     // Default to ACTIVE routes only
@@ -100,13 +98,11 @@ app.get('/', requireAuth, async (c) => {
   return c.json({
     success: true,
     data: {
-      routes: routesList,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
-      },
+      data: routesList,
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum),
     },
   });
 });
@@ -139,6 +135,20 @@ app.get('/stats', requireAuth, async (c) => {
       },
     },
   });
+});
+
+// GET /api/routes/:id/completion-count - Get route completion count
+app.get('/:id/completion-count', requireAuth, async (c) => {
+  const id = c.req.param('id');
+
+  const result = await db.select({ count: sql<number>`count(*)` })
+    .from(validations)
+    .where(and(
+      eq(validations.routeId, id),
+      eq(validations.status, 'VALIDE')
+    ));
+
+  return c.json({ count: Number(result[0]?.count || 0) });
 });
 
 // GET /api/routes/:id - Get single route
@@ -184,6 +194,9 @@ app.post('/', requireAuth, requireRole('OPENER', 'ADMIN'), async (c) => {
   const user = c.get('user');
   const body = await c.req.json();
 
+  // Admin routes are created as ACTIVE, OPENER routes as PENDING (need approval)
+  const routeStatus = user.role === 'ADMIN' ? 'ACTIVE' : 'PENDING';
+
   const [newRoute] = await db.insert(routes).values({
     id: crypto.randomUUID(),
     name: body.name,
@@ -197,7 +210,7 @@ app.post('/', requireAuth, requireRole('OPENER', 'ADMIN'), async (c) => {
     openerId: user.id,
     mainPhoto: body.mainPhoto,
     openingVideo: body.openingVideo,
-    status: 'PENDING',
+    status: routeStatus,
     openedAt: body.openedAt ? new Date(body.openedAt) : new Date(),
     holdMapping: body.holdMapping,
   }).returning();

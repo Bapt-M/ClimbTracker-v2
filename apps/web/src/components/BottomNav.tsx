@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
 
 // Colors for each nav item
 const navColors = {
@@ -8,11 +9,14 @@ const navColors = {
   profile: { active: '#FF2E63', bg: 'rgba(255, 46, 99, 0.15)' },
   friends: { active: '#9B59B6', bg: 'rgba(155, 89, 182, 0.15)' },
   analytics: { active: '#2ECC71', bg: 'rgba(46, 204, 113, 0.15)' },
+  premium: { active: '#FFB830', bg: 'rgba(255, 184, 48, 0.15)' },
+  admin: { active: '#f97316', bg: 'rgba(249, 115, 22, 0.15)' },
 };
 
 export const BottomNav = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const { isPremium } = usePremiumStatus();
 
   const isActive = (path: string) => {
     if (path === '/routes') {
@@ -27,8 +31,13 @@ export const BottomNav = () => {
     if (path === '/friends') {
       return location.pathname === '/friends';
     }
+    if (path === '/admin') {
+      return location.pathname === '/admin';
+    }
     return location.pathname === path;
   };
+
+  const isAdmin = (user as any)?.role === 'ADMIN';
 
   const profilePath = user ? `/users/${user.id}` : '/';
   const isProfileActive = isActive(profilePath);
@@ -132,29 +141,77 @@ export const BottomNav = () => {
           </span>
         </Link>
 
-        {/* Analytics */}
-        <Link
-          to="/"
-          className="flex flex-col items-center justify-center gap-1 transition-all"
-        >
-          <div
-            className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${isActive('/') ? 'scale-110' : ''}`}
-            style={{
-              backgroundColor: isActive('/') ? navColors.analytics.bg : 'transparent',
-              color: isActive('/') ? navColors.analytics.active : 'rgba(37, 42, 52, 0.4)',
-            }}
+        {/* Admin / Premium / Pricing */}
+        {isAdmin ? (
+          <Link
+            to="/admin"
+            className="flex flex-col items-center justify-center gap-1 transition-all"
           >
-            <span className={`material-symbols-outlined text-[24px] ${isActive('/') ? 'fill-1' : ''}`}>
-              analytics
+            <div
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${isActive('/admin') ? 'scale-110' : ''}`}
+              style={{
+                backgroundColor: isActive('/admin') ? navColors.admin.bg : 'transparent',
+                color: isActive('/admin') ? navColors.admin.active : 'rgba(37, 42, 52, 0.4)',
+              }}
+            >
+              <span className={`material-symbols-outlined text-[24px] ${isActive('/admin') ? 'fill-1' : ''}`}>
+                admin_panel_settings
+              </span>
+            </div>
+            <span
+              className="text-[9px] font-extrabold uppercase tracking-tighter"
+              style={{ color: isActive('/admin') ? navColors.admin.active : 'rgba(37, 42, 52, 0.4)' }}
+            >
+              Admin
             </span>
-          </div>
-          <span
-            className="text-[9px] font-extrabold uppercase tracking-tighter"
-            style={{ color: isActive('/') ? navColors.analytics.active : 'rgba(37, 42, 52, 0.4)' }}
+          </Link>
+        ) : isPremium ? (
+          <Link
+            to="/"
+            className="flex flex-col items-center justify-center gap-1 transition-all"
           >
-            Analyses
-          </span>
-        </Link>
+            <div
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${isActive('/') ? 'scale-110' : ''}`}
+              style={{
+                backgroundColor: isActive('/') ? navColors.analytics.bg : 'transparent',
+                color: isActive('/') ? navColors.analytics.active : 'rgba(37, 42, 52, 0.4)',
+              }}
+            >
+              <span className={`material-symbols-outlined text-[24px] ${isActive('/') ? 'fill-1' : ''}`}>
+                analytics
+              </span>
+            </div>
+            <span
+              className="text-[9px] font-extrabold uppercase tracking-tighter"
+              style={{ color: isActive('/') ? navColors.analytics.active : 'rgba(37, 42, 52, 0.4)' }}
+            >
+              Analyses
+            </span>
+          </Link>
+        ) : (
+          <Link
+            to="/pricing"
+            className="flex flex-col items-center justify-center gap-1 transition-all"
+          >
+            <div
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${isActive('/pricing') ? 'scale-110' : ''}`}
+              style={{
+                backgroundColor: isActive('/pricing') ? navColors.premium.bg : 'transparent',
+                color: isActive('/pricing') ? navColors.premium.active : 'rgba(37, 42, 52, 0.4)',
+              }}
+            >
+              <span className={`material-symbols-outlined text-[24px] ${isActive('/pricing') ? 'fill-1' : ''}`}>
+                workspace_premium
+              </span>
+            </div>
+            <span
+              className="text-[9px] font-extrabold uppercase tracking-tighter"
+              style={{ color: isActive('/pricing') ? navColors.premium.active : 'rgba(37, 42, 52, 0.4)' }}
+            >
+              Premium
+            </span>
+          </Link>
+        )}
       </div>
     </div>
   );

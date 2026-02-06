@@ -35,8 +35,9 @@ coverage/
 # Turbo
 .turbo/
 
-# Uploads
-uploads/
+# Uploads (keep structure but ignore files)
+uploads/*
+!uploads/.gitkeep
 
 # Temp
 tmp/

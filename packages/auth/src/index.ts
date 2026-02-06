@@ -5,14 +5,50 @@ import * as schema from '@climbtracker/database/schema';
 
 export type AuthDatabase = Database;
 
+export interface SocialProviderConfig {
+  clientId: string;
+  clientSecret: string;
+}
+
 export interface AuthConfig {
   db: Database;
   baseURL: string;
   secret: string;
   trustedOrigins?: string[];
+  // OAuth providers (optional)
+  google?: SocialProviderConfig;
+  apple?: SocialProviderConfig & { teamId?: string; keyId?: string; privateKey?: string };
+  facebook?: SocialProviderConfig;
 }
 
 export function createAuth(config: AuthConfig) {
+  // Build social providers configuration
+  const socialProviders: Record<string, any> = {};
+
+  if (config.google?.clientId && config.google?.clientSecret) {
+    socialProviders.google = {
+      clientId: config.google.clientId,
+      clientSecret: config.google.clientSecret,
+    };
+  }
+
+  if (config.apple?.clientId && config.apple?.clientSecret) {
+    socialProviders.apple = {
+      clientId: config.apple.clientId,
+      clientSecret: config.apple.clientSecret,
+      ...(config.apple.teamId && { teamId: config.apple.teamId }),
+      ...(config.apple.keyId && { keyId: config.apple.keyId }),
+      ...(config.apple.privateKey && { privateKey: config.apple.privateKey }),
+    };
+  }
+
+  if (config.facebook?.clientId && config.facebook?.clientSecret) {
+    socialProviders.facebook = {
+      clientId: config.facebook.clientId,
+      clientSecret: config.facebook.clientSecret,
+    };
+  }
+
   return betterAuth({
     database: drizzleAdapter(config.db, {
       provider: 'pg',
@@ -34,6 +70,9 @@ export function createAuth(config: AuthConfig) {
       autoSignIn: true,
       minPasswordLength: 8,
     },
+
+    // Social providers
+    socialProviders,
 
     // Session configuration
     session: {
@@ -89,6 +128,17 @@ export function createAuth(config: AuthConfig) {
           type: 'string[]',
           required: false,
           fieldName: 'additional_photos',
+        },
+        isPremium: {
+          type: 'boolean',
+          required: false,
+          defaultValue: false,
+          fieldName: 'is_premium',
+        },
+        stripeCustomerId: {
+          type: 'string',
+          required: false,
+          fieldName: 'stripe_customer_id',
         },
       },
     },

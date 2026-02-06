@@ -1,6 +1,35 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Module-level cache to avoid re-fetching SVG for each component instance
+let cachedSvg: string | null = null;
+let fetchPromise: Promise<string> | null = null;
+
+const fetchGymLayoutSvg = async (): Promise<string> => {
+  if (cachedSvg) return cachedSvg;
+
+  if (fetchPromise) return fetchPromise;
+
+  fetchPromise = fetch(`${API_URL}/api/gym-layout/active`, {
+    credentials: 'include',
+  })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to fetch');
+      return response.json();
+    })
+    .then(data => {
+      cachedSvg = data.svgContent;
+      return cachedSvg;
+    })
+    .catch(error => {
+      console.error('Failed to load gym layout:', error);
+      fetchPromise = null;
+      return '';
+    });
+
+  return fetchPromise;
+};
 
 interface MiniGymLayoutProps {
   sector: string;
@@ -8,26 +37,19 @@ interface MiniGymLayoutProps {
   size?: 'sm' | 'md';
 }
 
-export const MiniGymLayout = ({ sector, className = '', size = 'md' }: MiniGymLayoutProps) => {
-  const [rawSvg, setRawSvg] = useState<string>('');
+const MiniGymLayoutComponent = ({ sector, className = '', size = 'md' }: MiniGymLayoutProps) => {
+  const [rawSvg, setRawSvg] = useState<string>(cachedSvg || '');
 
-  // Load SVG from API only once
+  // Load SVG from cache or API
   useEffect(() => {
-    const loadSVG = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/gym-layout/active`, {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setRawSvg(data.svgContent);
-        }
-      } catch (error) {
-        console.error('Failed to load gym layout:', error);
-      }
-    };
+    if (cachedSvg) {
+      setRawSvg(cachedSvg);
+      return;
+    }
 
-    loadSVG();
+    fetchGymLayoutSvg().then(svg => {
+      if (svg) setRawSvg(svg);
+    });
   }, []);
 
   // Process SVG with styles whenever sector changes
@@ -120,3 +142,6 @@ export const MiniGymLayout = ({ sector, className = '', size = 'md' }: MiniGymLa
     </div>
   );
 };
+
+// Memoize to prevent unnecessary re-renders
+export const MiniGymLayout = memo(MiniGymLayoutComponent);

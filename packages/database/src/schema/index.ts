@@ -15,3 +15,4 @@ export * from './gym-layouts';
 export * from './friendships';
 export * from './videos';
 export * from './analyses';
+export * from './notifications';

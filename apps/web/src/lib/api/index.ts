@@ -212,6 +212,7 @@ export interface UserStats {
   totalValidations: number;
   totalComments: number;
   totalPoints: number;
+  maxDifficulty: string | null;
   validationsByDifficulty: { difficulty: string; count: number }[];
   recentValidations: {
     id: string;
@@ -333,56 +334,57 @@ export const routesAPI = {
 // Validations API
 export const validationsAPI = {
   getUserValidations: async (): Promise<Validation[]> => {
+    // This endpoint returns a flat array directly
     const response = await fetchAPI<Validation[]>('/api/validations/user');
     return response;
   },
 
   getRouteValidations: async (routeId: string): Promise<Validation[]> => {
-    const response = await fetchAPI<Validation[]>(`/api/validations/route/${routeId}`);
-    return response;
+    const response = await fetchAPI<{ success: boolean; data: { validations: Validation[] } }>(`/api/validations/route/${routeId}`);
+    return response.data?.validations || [];
   },
 
   createValidation: async (data: ValidationCreateInput): Promise<Validation> => {
-    const response = await fetchAPI<Validation>('/api/validations', {
+    const response = await fetchAPI<{ success: boolean; data: { validation: Validation } }>('/api/validations', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return response;
+    return response.data.validation;
   },
 
   updateValidation: async (id: string, data: Partial<ValidationCreateInput>): Promise<Validation> => {
-    const response = await fetchAPI<Validation>(`/api/validations/${id}`, {
+    const response = await fetchAPI<{ success: boolean; data: { validation: Validation } }>(`/api/validations/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
-    return response;
+    return response.data.validation;
   },
 
   deleteValidation: async (id: string): Promise<void> => {
     await fetchAPI(`/api/validations/${id}`, { method: 'DELETE' });
   },
 
-  toggleFavorite: async (routeId: string): Promise<Validation> => {
-    const response = await fetchAPI<Validation>(`/api/validations/${routeId}/favorite`, {
-      method: 'PUT',
+  toggleFavorite: async (validationId: string): Promise<Validation> => {
+    const response = await fetchAPI<{ success: boolean; data: { validation: Validation } }>(`/api/validations/${validationId}/favorite`, {
+      method: 'POST',
     });
-    return response;
+    return response.data.validation;
   },
 };
 
 // Comments API
 export const commentsAPI = {
   getRouteComments: async (routeId: string): Promise<Comment[]> => {
-    const response = await fetchAPI<Comment[]>(`/api/comments/route/${routeId}`);
-    return response;
+    const response = await fetchAPI<{ success: boolean; data: { comments: Comment[] } }>(`/api/comments/route/${routeId}`);
+    return response.data?.comments || [];
   },
 
   createComment: async (routeId: string, content: string, mediaUrl?: string, mediaType?: 'IMAGE' | 'VIDEO'): Promise<Comment> => {
-    const response = await fetchAPI<Comment>('/api/comments', {
+    const response = await fetchAPI<{ success: boolean; data: { comment: Comment } }>('/api/comments', {
       method: 'POST',
       body: JSON.stringify({ routeId, content, mediaUrl, mediaType }),
     });
-    return response;
+    return response.data.comment;
   },
 
   deleteComment: async (id: string): Promise<void> => {
@@ -393,21 +395,21 @@ export const commentsAPI = {
 // Users API
 export const usersAPI = {
   getCurrentUser: async (): Promise<User> => {
-    const response = await fetchAPI<User>('/api/users/me');
-    return response;
+    const response = await fetchAPI<{ success: boolean; data: { user: User } }>('/api/users/me');
+    return response.data.user;
   },
 
   getUserById: async (id: string): Promise<User> => {
-    const response = await fetchAPI<User>(`/api/users/${id}`);
-    return response;
+    const response = await fetchAPI<{ success: boolean; data: { user: User } }>(`/api/users/${id}`);
+    return response.data.user;
   },
 
   updateProfile: async (data: Partial<User>): Promise<User> => {
-    const response = await fetchAPI<User>('/api/users/me', {
+    const response = await fetchAPI<{ success: boolean; data: { user: User } }>('/api/users/me', {
       method: 'PUT',
       body: JSON.stringify(data),
     });
-    return response;
+    return response.data.user;
   },
 
   getUserStats: async (userId: string): Promise<UserStats> => {
@@ -432,19 +434,65 @@ export const usersAPI = {
 // Leaderboard API
 export const leaderboardAPI = {
   getLeaderboard: async (filters?: LeaderboardFilters): Promise<LeaderboardResponse> => {
+    const endpoint = filters?.tab === 'friends' ? '/api/leaderboard/friends' : '/api/leaderboard';
     const params = {
-      tab: filters?.tab || 'global',
-      page: filters?.page || 1,
+      period: 'all',
       limit: filters?.limit || 50,
     };
     const queryString = buildQueryString(params);
-    const response = await fetchAPI<{ data: LeaderboardResponse }>(`/api/leaderboard${queryString}`);
-    return response.data;
+    const response = await fetchAPI<{ data: { leaderboard: any[]; currentUser: any } }>(`${endpoint}${queryString}`);
+
+    console.log('[leaderboardAPI] Raw response:', response.data?.leaderboard?.[0]);
+
+    // Transform API response to match expected format
+    const users: LeaderboardUser[] = (response.data?.leaderboard || []).map((entry: any) => ({
+      rank: entry.rank,
+      userId: entry.userId,
+      name: entry.name,
+      avatar: entry.image,
+      points: entry.totalPoints ?? entry.totalValidations * 10, // Use real points if available
+      totalValidations: entry.totalValidations,
+      validatedGrade: entry.maxDifficulty || undefined,
+      flashRate: entry.totalFlashed && entry.totalValidations ? (entry.totalFlashed / entry.totalValidations) * 100 : 0,
+    }));
+
+    return {
+      users,
+      pagination: {
+        currentPage: filters?.page || 1,
+        totalPages: 1,
+        totalUsers: users.length,
+        hasMore: false,
+      },
+    };
   },
 
   getCurrentUserRank: async (): Promise<LeaderboardUser | null> => {
-    const response = await fetchAPI<{ data: LeaderboardUser }>('/api/leaderboard/current-user');
-    return response.data;
+    try {
+      // Get current user rank from the main leaderboard endpoint
+      const response = await fetchAPI<{ data: { leaderboard: any[]; currentUser: any } }>('/api/leaderboard?limit=100');
+      const currentUser = response.data?.currentUser;
+      if (!currentUser) return null;
+
+      // Try to get user info from session
+      const sessionResponse = await fetch(`${API_URL}/api/auth/get-session`, {
+        credentials: 'include',
+      });
+      const sessionData = await sessionResponse.json();
+      const user = sessionData?.user;
+
+      return {
+        rank: currentUser.rank,
+        userId: user?.id || '',
+        name: user?.name || '',
+        points: currentUser.totalPoints ?? currentUser.totalValidations * 10,
+        totalValidations: currentUser.totalValidations,
+        validatedGrade: currentUser.maxDifficulty || undefined,
+        flashRate: 0,
+      };
+    } catch {
+      return null;
+    }
   },
 
   getUserValidationDetails: async (userId: string): Promise<UserValidationDetails> => {
@@ -456,33 +504,60 @@ export const leaderboardAPI = {
 // Friendships API
 export const friendshipsAPI = {
   getFriends: async (): Promise<FriendshipWithUser[]> => {
-    const response = await fetchAPI<FriendshipWithUser[]>('/api/friendships');
-    return response;
+    const response = await fetchAPI<{ success: boolean; data: { friends: any[] } }>('/api/friendships');
+    return (response.data?.friends || []).map((f: any) => ({
+      id: f.friendshipId,
+      user: {
+        id: f.friend?.id,
+        name: f.friend?.name,
+        email: f.friend?.email || '',
+        avatar: f.friend?.image,
+      },
+      status: FriendshipStatus.ACCEPTED,
+      createdAt: f.acceptedAt,
+    }));
   },
 
   getPendingRequests: async (): Promise<FriendshipWithUser[]> => {
-    const response = await fetchAPI<FriendshipWithUser[]>('/api/friendships/pending');
-    return response;
+    const response = await fetchAPI<{ success: boolean; data: { received: any[]; sent: any[] } }>('/api/friendships/pending');
+    // Return received requests (these are what the user needs to act on)
+    return (response.data?.received || []).map((r: any) => ({
+      id: r.id,
+      user: {
+        id: r.user?.id,
+        name: r.user?.name,
+        email: r.user?.email || '',
+        avatar: r.user?.image,
+      },
+      status: FriendshipStatus.PENDING,
+      createdAt: r.createdAt,
+    }));
   },
 
   searchUsers: async (query: string): Promise<UserSearchResult[]> => {
-    const response = await fetchAPI<UserSearchResult[]>(`/api/friendships/search?q=${encodeURIComponent(query)}`);
-    return response;
+    const response = await fetchAPI<{ success: boolean; data: { users: any[] } }>(`/api/friendships/search?q=${encodeURIComponent(query)}`);
+    return (response.data?.users || []).map((u: any) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email || '',
+      friendshipStatus: u.friendshipStatus,
+      isRequester: u.isRequester,
+    }));
   },
 
   sendFriendRequest: async (userId: string): Promise<Friendship> => {
-    const response = await fetchAPI<Friendship>('/api/friendships', {
+    const response = await fetchAPI<{ success: boolean; data: { friendship: Friendship } }>('/api/friendships', {
       method: 'POST',
-      body: JSON.stringify({ addresseeId: userId }),
+      body: JSON.stringify({ userId }),
     });
-    return response;
+    return response.data.friendship;
   },
 
   acceptFriendRequest: async (id: string): Promise<Friendship> => {
-    const response = await fetchAPI<Friendship>(`/api/friendships/${id}/accept`, {
+    const response = await fetchAPI<{ success: boolean; data: { friendship: Friendship } }>(`/api/friendships/${id}/accept`, {
       method: 'PUT',
     });
-    return response;
+    return response.data.friendship;
   },
 
   rejectFriendRequest: async (id: string): Promise<void> => {

@@ -15,6 +15,7 @@ export interface AuthUser {
   wingspan?: number;
   profilePhoto?: string;
   additionalPhotos?: string[];
+  isPremium?: boolean;
 }
 
 export const useAuth = () => {
@@ -35,6 +36,7 @@ export const useAuth = () => {
         wingspan: (session.user as ClimbTrackerUser).wingspan,
         profilePhoto: (session.user as ClimbTrackerUser).profilePhoto,
         additionalPhotos: (session.user as ClimbTrackerUser).additionalPhotos,
+        isPremium: (session.user as ClimbTrackerUser).isPremium,
       }
     : null;
 

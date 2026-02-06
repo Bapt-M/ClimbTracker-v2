@@ -14,6 +14,28 @@ export const {
   signOut,
 } = authClient;
 
+// Social sign-in helpers
+export const signInWithGoogle = () => {
+  return signIn.social({
+    provider: 'google',
+    callbackURL: window.location.origin + '/routes',
+  });
+};
+
+export const signInWithApple = () => {
+  return signIn.social({
+    provider: 'apple',
+    callbackURL: window.location.origin + '/routes',
+  });
+};
+
+export const signInWithFacebook = () => {
+  return signIn.social({
+    provider: 'facebook',
+    callbackURL: window.location.origin + '/routes',
+  });
+};
+
 // Custom types for ClimbTracker
 export interface ClimbTrackerUser {
   id: string;
@@ -30,6 +52,9 @@ export interface ClimbTrackerUser {
   wingspan?: number;
   profilePhoto?: string;
   additionalPhotos?: string[];
+  isPremium?: boolean;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
   createdAt: Date;
   updatedAt: Date;
 }

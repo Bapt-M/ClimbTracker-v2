@@ -1,14 +1,19 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useSession } from './lib/auth-client';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import RoutesHub from './pages/RoutesHub';
-import RouteDetail from './pages/RouteDetail';
-import CreateRoute from './pages/CreateRoute';
-import Leaderboard from './pages/Leaderboard';
-import Friends from './pages/Friends';
-import UserProfile from './pages/UserProfile';
+
+// Lazy load all pages for better initial bundle size
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const RoutesHub = lazy(() => import('./pages/RoutesHub'));
+const RouteDetail = lazy(() => import('./pages/RouteDetail'));
+const CreateRoute = lazy(() => import('./pages/CreateRoute'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard'));
+const Friends = lazy(() => import('./pages/Friends'));
+const UserProfile = lazy(() => import('./pages/UserProfile'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Pricing = lazy(() => import('./pages/Pricing'));
 
 // Loading spinner component
 function LoadingSpinner() {
@@ -34,7 +39,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>;
 }
 
 // Public route wrapper - redirect to dashboard if already logged in
@@ -49,7 +54,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/routes" replace />;
   }
 
-  return <>{children}</>;
+  return <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>;
 }
 
 function App() {
@@ -129,6 +134,22 @@ function App() {
             <ProtectedRoute>
               <UserProfile />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pricing"
+          element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <Pricing />
+            </Suspense>
           }
         />
 
