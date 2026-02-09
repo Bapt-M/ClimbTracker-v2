@@ -44,3 +44,6 @@ export const mediaTypeEnum = pgEnum('media_type', ['IMAGE', 'VIDEO']);
 
 // Friendship status
 export const friendshipStatusEnum = pgEnum('friendship_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
+
+// Push subscription platform
+export const platformEnum = pgEnum('platform', ['web', 'ios', 'android']);

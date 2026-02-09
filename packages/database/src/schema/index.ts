@@ -16,3 +16,4 @@ export * from './friendships';
 export * from './videos';
 export * from './analyses';
 export * from './notifications';
+export * from './push-subscriptions';

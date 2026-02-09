@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -20,10 +21,12 @@ interface Notification {
 
 export const NotificationBell = () => {
   const navigate = useNavigate();
+  const pushNotifications = usePushNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [hasPromptedPush, setHasPromptedPush] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -76,7 +79,19 @@ export const NotificationBell = () => {
     }
   };
 
-  const handleOpen = () => {
+  const handleOpen = async () => {
+    // Prompt for push notifications on first click if not already subscribed
+    if (
+      !hasPromptedPush &&
+      pushNotifications.isSupported &&
+      pushNotifications.permission === 'default' &&
+      !pushNotifications.isSubscribed
+    ) {
+      setHasPromptedPush(true);
+      // Don't block the UI, let it run in background
+      pushNotifications.subscribe().catch(console.error);
+    }
+
     setIsOpen(!isOpen);
     if (!isOpen) {
       fetchNotifications();

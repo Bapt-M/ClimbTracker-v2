@@ -8,6 +8,7 @@ import { videos } from './videos';
 import { friendships } from './friendships';
 import { sessions } from './sessions';
 import { accounts } from './accounts';
+import { pushSubscriptions } from './push-subscriptions';
 
 export const users = pgTable('users', {
   // Better Auth required fields (text ID for Better Auth compatibility)
@@ -35,6 +36,30 @@ export const users = pgTable('users', {
   stripeCurrentPeriodEnd: timestamp('stripe_current_period_end'),
   isPremium: boolean('is_premium').notNull().default(false),
 
+  // Notification preferences
+  emailNotifications: boolean('email_notifications').notNull().default(true),
+  pushNotifications: boolean('push_notifications').notNull().default(true),
+  notificationPreferences: jsonb('notification_preferences').$type<{
+    email: {
+      friendRequest: boolean;
+      friendAccepted: boolean;
+      routeValidated: boolean;
+      commentReceived: boolean;
+      routeCreated: boolean;
+      achievementUnlocked: boolean;
+      system: boolean;
+    };
+    push: {
+      friendRequest: boolean;
+      friendAccepted: boolean;
+      routeValidated: boolean;
+      commentReceived: boolean;
+      routeCreated: boolean;
+      achievementUnlocked: boolean;
+      system: boolean;
+    };
+  }>(),
+
   // Timestamps
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
@@ -49,6 +74,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   receivedFriendRequests: many(friendships, { relationName: 'addressee' }),
   sessions: many(sessions),
   accounts: many(accounts),
+  pushSubscriptions: many(pushSubscriptions),
 }));
 
 export type User = typeof users.$inferSelect;

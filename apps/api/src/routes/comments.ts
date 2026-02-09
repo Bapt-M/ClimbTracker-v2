@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { db } from '../lib/auth';
-import { comments } from '@climbtracker/database/schema';
+import { comments, routes } from '@climbtracker/database/schema';
 import { requireAuth } from '../middleware/auth';
 import { eq, and, desc } from 'drizzle-orm';
+import { notify } from '../lib/notifications';
 
 const app = new Hono();
 
@@ -53,6 +54,24 @@ app.post('/', requireAuth, async (c) => {
       },
     },
   });
+
+  // Notify the route opener about the new comment (if not self-comment)
+  const route = await db.query.routes.findFirst({
+    where: eq(routes.id, body.routeId),
+    columns: { id: true, name: true, openerId: true },
+  });
+
+  if (route && route.openerId !== user.id) {
+    notify(route.openerId, 'COMMENT_RECEIVED', {
+      title: 'Nouveau commentaire',
+      body: `${user.name} a commente ta voie "${route.name}"`,
+      link: `/routes/${route.id}`,
+      icon: '/icon-192x192.png',
+    }, {
+      relatedUserId: user.id,
+      relatedRouteId: route.id,
+    }).catch(console.error);
+  }
 
   return c.json({ success: true, data: { comment: commentWithUser } }, 201);
 });

@@ -1,0 +1,26 @@
+{
+  "name": "@climbtracker/notifications",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "web-push": "^3.6.7",
+    "firebase-admin": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/web-push": "^3.6.4",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0"
+  }
+}

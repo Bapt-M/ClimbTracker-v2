@@ -27,6 +27,10 @@ import uploadRoutes from './routes/upload';
 import analyticsRoutes from './routes/analytics';
 import stripeRoutes from './routes/stripe';
 import notificationsRoutes from './routes/notifications';
+import pushSubscriptionsRoutes from './routes/push-subscriptions';
+
+// Import notifications initialization
+import { initializeNotifications } from './lib/notifications';
 
 const app = new Hono();
 
@@ -100,6 +104,10 @@ app.route('/api/upload', uploadRoutes);
 app.route('/api/analytics', analyticsRoutes);
 app.route('/api/stripe', stripeRoutes);
 app.route('/api/notifications', notificationsRoutes);
+app.route('/api/push-subscriptions', pushSubscriptionsRoutes);
+
+// Initialize notifications system
+initializeNotifications();
 
 // Start server
 const port = env.PORT;

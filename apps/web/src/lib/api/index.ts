@@ -568,3 +568,122 @@ export const friendshipsAPI = {
     await fetchAPI(`/api/friendships/${id}`, { method: 'DELETE' });
   },
 };
+
+// Push Subscriptions types
+export interface PushSubscription {
+  id: string;
+  platform: 'web' | 'ios' | 'android';
+  deviceName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationPreferences {
+  email: {
+    friendRequest: boolean;
+    friendAccepted: boolean;
+    routeValidated: boolean;
+    commentReceived: boolean;
+    routeCreated: boolean;
+    achievementUnlocked: boolean;
+    system: boolean;
+  };
+  push: {
+    friendRequest: boolean;
+    friendAccepted: boolean;
+    routeValidated: boolean;
+    commentReceived: boolean;
+    routeCreated: boolean;
+    achievementUnlocked: boolean;
+    system: boolean;
+  };
+}
+
+// Push Subscriptions API
+export const pushSubscriptionsAPI = {
+  getVapidKey: async (): Promise<string | null> => {
+    try {
+      const response = await fetchAPI<{ success: boolean; data: { vapidPublicKey: string } }>('/api/push-subscriptions/vapid-key');
+      return response.success ? response.data.vapidPublicKey : null;
+    } catch {
+      return null;
+    }
+  },
+
+  getSubscriptions: async (): Promise<PushSubscription[]> => {
+    const response = await fetchAPI<{ success: boolean; data: { subscriptions: PushSubscription[] } }>('/api/push-subscriptions');
+    return response.data?.subscriptions || [];
+  },
+
+  subscribe: async (data: {
+    endpoint?: string;
+    keys?: { p256dh: string; auth: string };
+    fcmToken?: string;
+    platform: 'web' | 'ios' | 'android';
+    deviceName?: string;
+  }): Promise<PushSubscription> => {
+    const response = await fetchAPI<{ success: boolean; data: { subscription: PushSubscription } }>('/api/push-subscriptions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.data.subscription;
+  },
+
+  unsubscribe: async (id: string): Promise<void> => {
+    await fetchAPI(`/api/push-subscriptions/${id}`, { method: 'DELETE' });
+  },
+
+  sendTest: async (channel: 'email' | 'push' | 'all' = 'all'): Promise<boolean> => {
+    try {
+      const response = await fetchAPI<{ success: boolean }>('/api/push-subscriptions/test', {
+        method: 'POST',
+        body: JSON.stringify({ channel }),
+      });
+      return response.success;
+    } catch {
+      return false;
+    }
+  },
+};
+
+// Notification Preferences API
+export const notificationPreferencesAPI = {
+  get: async (): Promise<{
+    emailNotifications: boolean;
+    pushNotifications: boolean;
+    preferences: NotificationPreferences;
+  }> => {
+    const response = await fetchAPI<{
+      success: boolean;
+      data: {
+        emailNotifications: boolean;
+        pushNotifications: boolean;
+        preferences: NotificationPreferences;
+      };
+    }>('/api/users/me/notification-preferences');
+    return response.data;
+  },
+
+  update: async (data: {
+    emailNotifications?: boolean;
+    pushNotifications?: boolean;
+    preferences?: NotificationPreferences;
+  }): Promise<{
+    emailNotifications: boolean;
+    pushNotifications: boolean;
+    preferences: NotificationPreferences;
+  }> => {
+    const response = await fetchAPI<{
+      success: boolean;
+      data: {
+        emailNotifications: boolean;
+        pushNotifications: boolean;
+        preferences: NotificationPreferences;
+      };
+    }>('/api/users/me/notification-preferences', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response.data;
+  },
+};

@@ -153,6 +153,95 @@ app.put('/me', requireAuth, async (c) => {
   return c.json({ success: true, data: { user: updatedUser } });
 });
 
+// GET /api/users/me/notification-preferences - Get notification preferences
+app.get('/me/notification-preferences', requireAuth, async (c) => {
+  const user = c.get('user');
+
+  const fullUser = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+    columns: {
+      emailNotifications: true,
+      pushNotifications: true,
+      notificationPreferences: true,
+    },
+  });
+
+  if (!fullUser) {
+    return c.json({ success: false, error: 'User not found' }, 404);
+  }
+
+  // Default preferences if not set
+  const defaultPreferences = {
+    email: {
+      friendRequest: true,
+      friendAccepted: true,
+      routeValidated: false,
+      commentReceived: true,
+      routeCreated: false,
+      achievementUnlocked: true,
+      system: true,
+    },
+    push: {
+      friendRequest: true,
+      friendAccepted: true,
+      routeValidated: true,
+      commentReceived: true,
+      routeCreated: true,
+      achievementUnlocked: true,
+      system: true,
+    },
+  };
+
+  return c.json({
+    success: true,
+    data: {
+      emailNotifications: fullUser.emailNotifications,
+      pushNotifications: fullUser.pushNotifications,
+      preferences: fullUser.notificationPreferences || defaultPreferences,
+    },
+  });
+});
+
+// PUT /api/users/me/notification-preferences - Update notification preferences
+app.put('/me/notification-preferences', requireAuth, async (c) => {
+  const user = c.get('user');
+  const body = await c.req.json();
+
+  const updateData: Record<string, unknown> = {
+    updatedAt: new Date(),
+  };
+
+  if (typeof body.emailNotifications === 'boolean') {
+    updateData.emailNotifications = body.emailNotifications;
+  }
+
+  if (typeof body.pushNotifications === 'boolean') {
+    updateData.pushNotifications = body.pushNotifications;
+  }
+
+  if (body.preferences) {
+    updateData.notificationPreferences = body.preferences;
+  }
+
+  const [updatedUser] = await db.update(users)
+    .set(updateData)
+    .where(eq(users.id, user.id))
+    .returning({
+      emailNotifications: users.emailNotifications,
+      pushNotifications: users.pushNotifications,
+      notificationPreferences: users.notificationPreferences,
+    });
+
+  return c.json({
+    success: true,
+    data: {
+      emailNotifications: updatedUser.emailNotifications,
+      pushNotifications: updatedUser.pushNotifications,
+      preferences: updatedUser.notificationPreferences,
+    },
+  });
+});
+
 // PUT /api/users/:id - Update user profile by ID (users can only update their own profile)
 app.put('/:id', requireAuth, async (c) => {
   const id = c.req.param('id');

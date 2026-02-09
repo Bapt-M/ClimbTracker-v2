@@ -3,6 +3,7 @@ import { db } from '../lib/auth';
 import { friendships, users } from '@climbtracker/database/schema';
 import { requireAuth } from '../middleware/auth';
 import { eq, and, or, desc, ne, sql } from 'drizzle-orm';
+import { notify } from '../lib/notifications';
 
 const app = new Hono();
 
@@ -172,6 +173,16 @@ app.post('/', requireAuth, async (c) => {
     status: 'PENDING',
   }).returning();
 
+  // Send notification to the addressee
+  notify(userId, 'FRIEND_REQUEST', {
+    title: 'Nouvelle demande d\'ami',
+    body: `${user.name} souhaite devenir ton ami`,
+    link: '/friends',
+    icon: '/icon-192x192.png',
+  }, {
+    relatedUserId: user.id,
+  }).catch(console.error);
+
   return c.json({ success: true, data: { friendship: newFriendship } }, 201);
 });
 
@@ -199,6 +210,16 @@ app.put('/:id/accept', requireAuth, async (c) => {
     })
     .where(eq(friendships.id, id))
     .returning();
+
+  // Send notification to the requester that their request was accepted
+  notify(friendship.requesterId, 'FRIEND_ACCEPTED', {
+    title: 'Demande d\'ami acceptee',
+    body: `${user.name} a accepte ta demande d'ami`,
+    link: '/friends',
+    icon: '/icon-192x192.png',
+  }, {
+    relatedUserId: user.id,
+  }).catch(console.error);
 
   return c.json({ success: true, data: { friendship: updated } });
 });

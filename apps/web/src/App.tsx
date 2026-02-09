@@ -14,6 +14,7 @@ const Friends = lazy(() => import('./pages/Friends'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Pricing = lazy(() => import('./pages/Pricing'));
+const NotificationSettings = lazy(() => import('./pages/NotificationSettings'));
 
 // Loading spinner component
 function LoadingSpinner() {
@@ -150,6 +151,14 @@ function App() {
             <Suspense fallback={<LoadingSpinner />}>
               <Pricing />
             </Suspense>
+          }
+        />
+        <Route
+          path="/settings/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationSettings />
+            </ProtectedRoute>
           }
         />
 
