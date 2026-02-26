@@ -2,299 +2,219 @@
 
 Ce document organise le développement de ClimbTracker en 8 projets distincts et indépendants, permettant une approche modulaire et itérative.
 
+> **Note stack :** Le projet utilise **Hono** (pas Express), **Better Auth** (pas JWT custom), **Drizzle ORM** (pas Prisma), **Supabase PostgreSQL** (pas Redis), **TanStack Query** (pas Zustand/Axios).
+
 ---
 
 ## 📊 Vue d'ensemble des projets
 
-| Projet | Nom | Durée | Dépendances | Priorité |
-|--------|-----|-------|-------------|----------|
-| P1 | Infrastructure & Auth | 2 sem | Aucune | Critique |
-| P2 | Gestion des Voies | 2 sem | P1 | Critique |
-| P3 | Fonctionnalités Sociales | 2 sem | P1, P2 | Critique |
-| P4 | Polish & Déploiement MVP | 2 sem | P1, P2, P3 | Critique |
-| P5 | Médias & Recherche Avancée | 3 sem | P4 | Haute |
-| P6 | Engagement & Notifications | 3 sem | P4 | Haute |
-| P7 | IA - Détection Prises | 4 sem | P4 | Moyenne |
-| P8 | IA - Analyse Mouvement | 4 sem | P4, P7 | Moyenne |
+| Projet | Nom | Durée | Dépendances | Priorité | Statut |
+|--------|-----|-------|-------------|----------|--------|
+| P1 | Infrastructure & Auth | 2 sem | Aucune | Critique | ✅ Terminé |
+| P2 | Gestion des Voies | 2 sem | P1 | Critique | ✅ Terminé |
+| P3 | Fonctionnalités Sociales | 2 sem | P1, P2 | Critique | ✅ Terminé |
+| P4 | Polish & Déploiement MVP | 2 sem | P1, P2, P3 | Critique | 🟡 Partiel |
+| P5 | Médias & Recherche Avancée | 3 sem | P4 | Haute | 🟡 Partiel |
+| P6 | Engagement & Notifications | 3 sem | P4 | Haute | 🟡 Partiel |
+| P7 | IA - Détection Prises | 4 sem | P4 | Moyenne | 🟡 MVP livré |
+| P8 | IA - Analyse Mouvement | 4 sem | P4, P7 | Moyenne | 🟡 MVP livré |
 
 ---
 
 ## PROJET 1: Infrastructure & Authentification
 **Durée:** 2 semaines
-**Équipe:** Backend (2) + Frontend (1) + DevOps (1)
-**Statut:** 🔴 Non démarré
-
-### Objectifs
-Créer les fondations techniques et le système d'authentification complet.
+**Statut:** ✅ Terminé
 
 ### Livrables
 
 #### Backend
-- [ ] Configuration serveur Express complet
-- [ ] Connexion PostgreSQL + Redis
-- [ ] Migrations Prisma initiales (User, Role)
-- [ ] Middleware d'authentification JWT
-- [ ] API Endpoints Auth:
-  - `POST /api/auth/register`
-  - `POST /api/auth/login`
-  - `POST /api/auth/refresh`
-  - `POST /api/auth/logout`
+- [x] Configuration serveur Hono complet (`apps/api/src/index.ts`)
+- [x] Connexion PostgreSQL via Supabase + Drizzle ORM
+- [ ] Redis (non utilisé — remplacé par Supabase)
+- [x] Migrations Drizzle initiales (User, Role, Sessions, Accounts, Verifications)
+- [x] Middleware d'authentification via Better Auth (`apps/api/src/middleware/auth.middleware.ts`)
+- [x] API Endpoints Auth (gérés par Better Auth) :
+  - `POST /api/auth/sign-up`
+  - `POST /api/auth/sign-in`
+  - `POST /api/auth/sign-out`
   - `POST /api/auth/forgot-password`
   - `POST /api/auth/reset-password`
-- [ ] Guards de rôles (CLIMBER, OPENER, ADMIN)
-- [ ] Rate limiting sur les routes auth
-- [ ] Validation Zod des entrées
-- [ ] Tests unitaires auth (>80% coverage)
+- [x] Guards de rôles (CLIMBER, OPENER, ADMIN) (`requireRole`)
+- [ ] Rate limiting sur les routes auth (non implémenté)
+- [x] Validation Zod des entrées (`apps/api/src/env.ts`)
+- [ ] Tests unitaires auth >80% coverage (partiel — `helpers.test.ts`, `health.test.ts`)
 
 #### Frontend
-- [ ] Configuration routing React Router
-- [ ] Pages auth:
-  - Login
-  - Register
-  - Forgot Password
-  - Reset Password
-- [ ] Context/Store auth (Zustand)
-- [ ] Protected routes
-- [ ] Axios interceptors pour JWT
-- [ ] Gestion refresh token automatique
-- [ ] Composants UI auth réutilisables
-- [ ] Formulaires avec validation
+- [x] Configuration routing React Router (`apps/web/src/App.tsx`)
+- [x] Pages auth :
+  - [x] Login (`pages/Login.tsx`) — OAuth Google/Apple/Facebook inclus
+  - [x] Register (`pages/Register.tsx`)
+  - [ ] Forgot Password (page dédiée non trouvée — géré via Better Auth)
+  - [ ] Reset Password (page dédiée non trouvée — géré via Better Auth)
+- [x] Auth client Better Auth (`lib/auth-client.ts`)
+- [x] Protected routes (`App.tsx`)
+- [x] Gestion session automatique via Better Auth + TanStack Query
+- [x] `useAuth` hook (`hooks/useAuth.ts`)
+- [x] Composants UI auth réutilisables (Radix UI)
+- [x] Formulaires avec validation (react-hook-form + zod)
 
 #### DevOps
-- [ ] Docker Compose finalisé
-- [ ] Scripts de seed database
-- [ ] Variables d'environnement documentées
-- [ ] CI/CD basique (linting, tests)
+- [ ] Docker Compose finalisé (non présent)
+- [ ] Scripts de seed database (non présents)
+- [x] Variables d'environnement documentées (`apps/api/src/env.ts`)
+- [ ] CI/CD basique (non configuré)
 
 ### Critères de succès
 - ✅ Un utilisateur peut s'inscrire, se connecter et se déconnecter
-- ✅ Les tokens JWT sont correctement gérés (access + refresh)
+- ✅ Les sessions sont correctement gérées (Better Auth)
 - ✅ Les rôles sont appliqués correctement
-- ✅ Tests passent à 100%
-
-### Fichiers principaux
-```
-apps/api/src/
-├── routes/auth.routes.ts
-├── controllers/auth.controller.ts
-├── services/auth.service.ts
-├── middlewares/auth.middleware.ts
-├── middlewares/roles.middleware.ts
-└── utils/jwt.utils.ts
-
-apps/web/src/
-├── pages/auth/
-│   ├── Login.tsx
-│   ├── Register.tsx
-│   └── ForgotPassword.tsx
-├── stores/authStore.ts
-├── hooks/useAuth.ts
-└── lib/api/authApi.ts
-```
 
 ---
 
 ## PROJET 2: Gestion des Voies
 **Durée:** 2 semaines
-**Équipe:** Backend (2) + Frontend (2)
 **Dépendances:** P1
-**Statut:** 🔴 Non démarré
-
-### Objectifs
-Permettre aux ouvreurs de créer, modifier et gérer les voies d'escalade.
+**Statut:** ✅ Terminé
 
 ### Livrables
 
 #### Backend
-- [ ] Migration Prisma: Route model
-- [ ] Service upload Cloudinary/S3
-- [ ] API Endpoints Routes:
-  - `GET /api/routes` (public, avec filtres)
-  - `GET /api/routes/:id` (public)
-  - `POST /api/routes` (OPENER+)
-  - `PUT /api/routes/:id` (OPENER propriétaire)
-  - `DELETE /api/routes/:id` (ADMIN)
-  - `PUT /api/routes/:id/status` (ADMIN)
-- [ ] Upload endpoints:
-  - `POST /api/upload/photo`
-  - `POST /api/upload/video`
-- [ ] Validation fichiers (taille, type)
-- [ ] Compression images automatique
-- [ ] Génération thumbnails vidéo
-- [ ] Workflow validation ADMIN
-- [ ] Tests API routes
+- [x] Schema Drizzle: Route model (`packages/database/src/schema/routes.ts`)
+- [x] Service upload Cloudinary (`apps/api/src/routes/upload.ts`, `apps/web/src/lib/upload.ts`)
+- [x] API Endpoints Routes :
+  - [x] `GET /api/routes` (public, avec filtres)
+  - [x] `GET /api/routes/:id` (public)
+  - [x] `POST /api/routes` (OPENER+)
+  - [x] `PUT /api/routes/:id` (OPENER propriétaire)
+  - [x] `DELETE /api/routes/:id`
+  - [x] `PUT /api/routes/:id/status` (ADMIN)
+- [x] Upload endpoints :
+  - [x] `POST /api/upload/route-photo`
+  - [x] `POST /api/upload/user-photos`
+  - [x] `DELETE /api/upload/photo`
+- [x] Validation fichiers (type)
+- [x] Compression images automatique (via Cloudinary)
+- [ ] Génération thumbnails vidéo (non implémenté)
+- [x] Workflow validation ADMIN (PENDING → ACTIVE → ARCHIVED)
+- [ ] Tests API routes (non écrits — uniquement health check)
 
 #### Frontend
-- [ ] Page Hub des voies (liste)
-- [ ] Page détail voie
-- [ ] Formulaire création voie (OPENER)
-- [ ] Formulaire édition voie (OPENER)
-- [ ] Upload photo avec preview
-- [ ] Upload vidéo avec progress bar
-- [ ] Filtres:
-  - Par grade
-  - Par couleur
-  - Par secteur
-  - Par statut
-  - Par date
-- [ ] Composants:
-  - RouteCard
-  - RouteFilters
-  - RouteForm
-  - MediaUploader
-- [ ] Interface validation admin
-- [ ] Responsive design
+- [x] Page Hub des voies — `pages/RoutesHub.tsx`
+- [x] Page détail voie — `pages/RouteDetail.tsx`
+- [x] Formulaire création voie (OPENER) — `pages/CreateRoute.tsx`
+- [x] Formulaire édition voie (OPENER) — `components/EditRouteModal.tsx`
+- [x] Upload photo avec preview — `components/ImageUpload.tsx`
+- [ ] Upload vidéo avec progress bar (non implémenté)
+- [x] Filtres :
+  - [x] Par grade (`GradeFilter.tsx`)
+  - [x] Par couleur (`HoldColorFilter.tsx`)
+  - [x] Par secteur (`GymLayoutFilter.tsx`)
+  - [x] Par statut (`ValidationStatusFilter.tsx`)
+  - [x] Par date (`DateFilter.tsx`)
+- [x] Composants :
+  - [x] RouteCard — `RouteCardWithStatus.tsx`
+  - [x] RouteFilters — filtres intégrés dans RoutesHub
+  - [x] RouteForm — CreateRoute / EditRouteModal
+  - [x] MediaUploader — `ImageUpload.tsx`
+- [x] Interface validation admin — `components/admin/AdminRoutes.tsx`
+- [x] Responsive design (Tailwind + Radix UI)
 
 #### Packages/Shared
-- [ ] Types Route, RouteStatus
-- [ ] Schemas Zod pour routes
-- [ ] Constantes (grades, couleurs)
+- [x] Types RouteStatus, DifficultyColor, HoldColorCategory (`packages/database/src/schema/enums.ts`)
+- [x] Constantes (grades, couleurs) — `apps/web/src/utils/gradeColors.ts`
+- [ ] Schemas Zod partagés (validation côté serveur via Hono, non partagé en package)
 
 ### Critères de succès
 - ✅ Un ouvreur peut créer une voie complète
-- ✅ Photos et vidéos s'uploadent correctement
+- ✅ Photos s'uploadent correctement (Cloudinary)
 - ✅ Les filtres fonctionnent
-- ✅ Admin peut valider/rejeter les voies
+- ✅ Admin peut valider/archiver les voies
 - ✅ UI responsive mobile/desktop
-
-### Fichiers principaux
-```
-apps/api/src/
-├── routes/routes.routes.ts
-├── routes/upload.routes.ts
-├── controllers/routes.controller.ts
-├── services/routes.service.ts
-├── services/media.service.ts
-└── workers/media-processor.worker.ts
-
-apps/web/src/
-├── pages/
-│   ├── RoutesHub.tsx
-│   ├── RouteDetail.tsx
-│   ├── CreateRoute.tsx (OPENER)
-│   └── EditRoute.tsx (OPENER)
-├── components/routes/
-│   ├── RouteCard.tsx
-│   ├── RouteFilters.tsx
-│   ├── RouteForm.tsx
-│   └── MediaUploader.tsx
-└── lib/api/routesApi.ts
-```
 
 ---
 
 ## PROJET 3: Fonctionnalités Sociales
 **Durée:** 2 semaines
-**Équipe:** Backend (2) + Frontend (2)
 **Dépendances:** P1, P2
-**Statut:** 🔴 Non démarré
-
-### Objectifs
-Créer l'aspect communautaire: validations, commentaires, profils.
+**Statut:** ✅ Terminé (+ extras : amis, leaderboard)
 
 ### Livrables
 
 #### Backend
-- [ ] Migrations: Validation, Comment, Video models
-- [ ] API Endpoints Validations:
-  - `POST /api/routes/:id/validate`
-  - `DELETE /api/routes/:id/validate`
-  - `GET /api/routes/:id/validations`
-  - `GET /api/users/:id/validations`
-- [ ] API Endpoints Comments:
-  - `POST /api/routes/:id/comments`
-  - `PUT /api/comments/:id`
-  - `DELETE /api/comments/:id`
-  - `GET /api/routes/:id/comments`
-- [ ] API Endpoints Users:
-  - `GET /api/users/:id`
-  - `PUT /api/users/:id`
-  - `GET /api/users/:id/stats`
-- [ ] Calcul statistiques utilisateur
-- [ ] Pagination commentaires
-- [ ] Modération commentaires (ADMIN)
+- [x] Schema Drizzle: Validation, Comment, Video models
+- [x] API Endpoints Validations :
+  - [x] `POST /api/routes/:id/validate`
+  - [x] `DELETE /api/routes/:id/validate`
+  - [x] `GET /api/routes/:id/validations`
+  - [x] `GET /api/users/:id/validations`
+- [x] API Endpoints Comments :
+  - [x] `POST /api/routes/:id/comments`
+  - [x] `PUT /api/comments/:id`
+  - [x] `DELETE /api/comments/:id`
+  - [x] `GET /api/routes/:id/comments`
+- [x] API Endpoints Users :
+  - [x] `GET /api/users/:id`
+  - [x] `PUT /api/users/:id`
+  - [x] `GET /api/users/:id/stats`
+- [x] Calcul statistiques utilisateur
+- [ ] Pagination commentaires (non confirmé)
+- [ ] Modération commentaires (ADMIN) (non confirmé)
+- [x] **BONUS** — API Amis (`apps/api/src/routes/friendships.ts`)
+- [x] **BONUS** — API Leaderboard (`apps/api/src/routes/leaderboard.ts`)
 
 #### Frontend
-- [ ] Système de validation (bouton + modal)
-- [ ] Affichage liste validations
-- [ ] Section commentaires
-- [ ] Formulaire commentaire
-- [ ] Upload média dans commentaire
-- [ ] Page profil utilisateur:
-  - Informations personnelles
-  - Statistiques (voies validées, par grade, etc.)
-  - Liste des validations
-  - Activité récente
-- [ ] Édition profil
-- [ ] Avatar upload
-- [ ] Composants:
-  - ValidationButton
-  - CommentList
-  - CommentForm
-  - UserStats
-  - UserProfile
+- [x] Système de validation — `QuickStatusMenu.tsx`, `UserValidationDetailsModal.tsx`
+- [x] Affichage liste validations
+- [x] Section commentaires — `CommentList.tsx`
+- [x] Formulaire commentaire — `CommentForm.tsx`
+- [x] Upload média dans commentaire (schema support, IMAGE/VIDEO)
+- [x] Page profil utilisateur — `pages/UserProfile.tsx` :
+  - [x] Informations personnelles
+  - [x] Statistiques (voies validées, par grade, etc.)
+  - [x] Liste des validations
+  - [x] Activité / historique
+- [x] Édition profil — `ProfileEditForm.tsx`
+- [x] Avatar upload — `ImageUpload.tsx`
+- [x] Composants :
+  - [x] ValidationButton — QuickStatusMenu
+  - [x] CommentList
+  - [x] CommentForm
+  - [x] UserStats
+  - [x] UserProfile
+  - [x] KiviatChart (radar chart des compétences)
+- [x] **BONUS** — Page Amis `pages/Friends.tsx`
+- [x] **BONUS** — Page Leaderboard `pages/Leaderboard.tsx`
 
 ### Critères de succès
-- ✅ Un grimpeur peut valider/invalider une voie
+- ✅ Un grimpeur peut valider/invalider une voie (EN_PROJET, VALIDE, flash, tentatives)
 - ✅ Les commentaires s'affichent et se créent
 - ✅ Le profil affiche les stats correctes
-- ✅ Les médias dans commentaires fonctionnent
-
-### Fichiers principaux
-```
-apps/api/src/
-├── routes/validations.routes.ts
-├── routes/comments.routes.ts
-├── routes/users.routes.ts
-├── controllers/validations.controller.ts
-├── controllers/comments.controller.ts
-├── controllers/users.controller.ts
-└── services/stats.service.ts
-
-apps/web/src/
-├── pages/
-│   ├── UserProfile.tsx
-│   └── EditProfile.tsx
-├── components/
-│   ├── ValidationButton.tsx
-│   ├── CommentList.tsx
-│   ├── CommentForm.tsx
-│   └── UserStats.tsx
-└── hooks/
-    ├── useValidation.ts
-    └── useComments.ts
-```
+- ✅ Système d'amis fonctionnel (bonus)
+- ✅ Leaderboard global et amis (bonus)
 
 ---
 
 ## PROJET 4: Polish & Déploiement MVP
 **Durée:** 2 semaines
-**Équipe:** Full Stack (3) + DevOps (1) + QA (1)
 **Dépendances:** P1, P2, P3
-**Statut:** 🔴 Non démarré
-
-### Objectifs
-Finaliser, optimiser et déployer la version MVP en production.
+**Statut:** 🟡 Partiel
 
 ### Livrables
 
 #### Optimisations
-- [ ] Optimisation requêtes Prisma (includes, selects)
-- [ ] Mise en cache Redis (routes populaires)
+- [ ] Optimisation requêtes Drizzle (includes, selects)
+- [ ] Mise en cache (Redis non utilisé)
 - [ ] Lazy loading images
 - [ ] Code splitting React
 - [ ] Bundle size optimization
-- [ ] Compression assets
-- [ ] CDN pour médias statiques
+- [x] Compression assets (Cloudinary CDN)
+- [x] CDN pour médias statiques (Cloudinary)
 - [ ] Indexes database
 
 #### Testing
-- [ ] Tests E2E critiques (Playwright/Cypress):
-  - Parcours inscription → création voie
-  - Parcours validation voie
-  - Parcours commentaire
+- [ ] Tests E2E critiques (Playwright/Cypress)
 - [ ] Tests d'intégration API
-- [ ] Tests composants React
+- [x] Tests composants React (`HoldColorIndicator.test.tsx`, `utils.test.ts`)
 - [ ] Tests de charge (k6/Artillery)
 - [ ] Tests responsive
 - [ ] Tests accessibilité (a11y)
@@ -307,78 +227,62 @@ Finaliser, optimiser et déployer la version MVP en production.
 - [ ] README complet
 
 #### Déploiement
-- [ ] Configuration production:
-  - Frontend: Vercel/Netlify
-  - Backend: Railway/Render/Fly.io
-  - Database: Supabase/Railway
-  - Redis: Upstash/Railway
+- [ ] Configuration production complète (Vercel/Railway/Fly.io)
 - [ ] CI/CD complet (GitHub Actions)
-- [ ] Monitoring: Sentry (erreurs)
-- [ ] Analytics: Posthog/Plausible
+- [ ] Monitoring: Sentry
+- [x] Analytics: infrastructure présente (`packages/analytics/`)
 - [ ] Logs centralisés
-- [ ] Health checks
+- [x] Health checks (`apps/api/src/routes/` — endpoint health)
 - [ ] Backups automatiques database
 
 #### UX/UI
-- [ ] Design system finalisé
-- [ ] Animations et transitions
-- [ ] Loading states partout
-- [ ] Error states partout
+- [x] Design system (Radix UI + Tailwind)
+- [ ] Animations et transitions (à compléter)
+- [ ] Loading states généralisés
+- [ ] Error states généralisés
 - [ ] Empty states
-- [ ] Messages de succès/erreur cohérents
-- [ ] Toast notifications
+- [x] Messages de succès/erreur cohérents (Toast notifications)
+- [x] Toast notifications (`components/ui/toaster.tsx`)
 - [ ] SEO basique (meta tags, sitemap)
 
 ### Critères de succès
-- ✅ Application déployée en production
-- ✅ Tests E2E passent à 100%
-- ✅ Performance Lighthouse > 90
-- ✅ Monitoring actif
-- ✅ Documentation complète
+- ❌ Application déployée en production
+- ❌ Tests E2E passent à 100%
+- ❌ Performance Lighthouse > 90 (non mesuré)
+- ❌ Monitoring actif
+- ❌ Documentation complète
 
 ---
 
 ## PROJET 5: Médias & Recherche Avancée
 **Durée:** 3 semaines
-**Équipe:** Backend (2) + Frontend (2)
 **Dépendances:** P4
-**Statut:** 🔴 Non démarré
-
-### Objectifs
-Enrichir l'expérience utilisateur avec galeries média et recherche puissante.
+**Statut:** 🟡 Partiel
 
 ### Livrables
 
 #### Backend
-- [ ] API Endpoints Galerie:
-  - `GET /api/routes/:id/media`
-  - `POST /api/routes/:id/media`
-  - `DELETE /api/media/:id`
+- [x] API galerie photos (upload.ts — route-photo, user-photos)
+- [ ] `POST /api/routes/:id/media` (endpoint dédié galerie non implémenté)
+- [ ] `DELETE /api/media/:id` (delete partiel via upload.ts)
 - [ ] Processing vidéo asynchrone (Bull queue)
 - [ ] Génération thumbnails multiples résolutions
 - [ ] Compression vidéo automatique
-- [ ] Watermarking optionnel
-- [ ] Recherche full-text (PostgreSQL)
-- [ ] API Search:
-  - `GET /api/search?q=...&filters=...`
-- [ ] Filtres avancés combinés
-- [ ] Tri multi-critères
+- [ ] Watermarking
+- [x] Recherche full-text intégrée dans `GET /api/routes` (paramètre `search`)
+- [ ] API Search dédiée `GET /api/search`
+- [x] Filtres avancés combinés (grade, couleur, secteur, statut, date)
+- [x] Tri multi-critères
 - [ ] Sauvegarde recherches utilisateur
 
 #### Frontend
-- [ ] Galerie photos par voie (lightbox)
-- [ ] Galerie vidéos par voie (player)
-- [ ] Upload multiple fichiers
+- [x] Galerie photos (`ImageViewer.tsx`)
+- [ ] Galerie vidéos avec player dédié
+- [x] Upload multiple fichiers (`ImageUpload.tsx`)
 - [ ] Progress bar upload multiple
-- [ ] Barre de recherche globale
-- [ ] Page résultats recherche
-- [ ] Filtres avancés UI:
-  - Multi-grade
-  - Multi-couleur
-  - Multi-secteur
-  - Date range
-  - Popularité
-  - Difficulté
+- [x] Barre de recherche globale (dans RoutesHub)
+- [ ] Page résultats recherche dédiée
+- [x] Filtres avancés UI (GradeFilter, HoldColorFilter, GymLayoutFilter, DateFilter, ValidationStatusFilter)
 - [ ] Sauvegarde filtres favoris
 - [ ] Historique recherches
 - [ ] Suggestions auto-complete
@@ -389,374 +293,391 @@ Enrichir l'expérience utilisateur avec galeries média et recherche puissante.
 - [ ] Worker indexation recherche
 
 ### Critères de succès
-- ✅ Upload multiple médias fonctionnel
-- ✅ Galeries fluides et rapides
-- ✅ Recherche pertinente et rapide (<200ms)
+- 🟡 Upload multiple médias (photos OK, vidéo non)
+- 🟡 Galeries (photos OK, vidéos non)
+- 🟡 Recherche fonctionnelle (basique OK, avancée non)
 - ✅ Filtres combinables
 
 ---
 
 ## PROJET 6: Engagement & Notifications
 **Durée:** 3 semaines
-**Équipe:** Backend (2) + Frontend (2)
 **Dépendances:** P4
-**Statut:** 🔴 Non démarré
-
-### Objectifs
-Augmenter l'engagement avec notifications, statistiques et gamification.
+**Statut:** 🟡 Partiel (infrastructure complète, envoi non activé)
 
 ### Livrables
 
 #### Backend
-- [ ] Système de notifications:
-  - Nouvelle voie dans grade préféré
-  - Réponse à commentaire
-  - Voie validée par ami
-  - Nouvelle voie dans secteur favori
-- [ ] API Notifications:
-  - `GET /api/notifications`
-  - `PUT /api/notifications/:id/read`
-  - `PUT /api/notifications/read-all`
-  - `DELETE /api/notifications/:id`
-- [ ] Préférences notifications utilisateur
-- [ ] Email notifications (optionnel)
-- [ ] WebSocket pour real-time
-- [ ] Statistiques avancées:
-  - Progression par grade
-  - Graphiques temporels
-  - Comparaison avec moyenne
-  - Calendrier d'activité (heatmap)
-- [ ] API Stats:
-  - `GET /api/users/:id/stats/progression`
-  - `GET /api/users/:id/stats/calendar`
-  - `GET /api/stats/global`
+- [x] Système de notifications en base (`packages/database/src/schema/notifications.ts`)
+- [x] Types : FRIEND_REQUEST, FRIEND_ACCEPTED, ROUTE_VALIDATED, COMMENT_RECEIVED, ROUTE_CREATED, ACHIEVEMENT_UNLOCKED, SYSTEM
+- [x] API Notifications :
+  - [x] `GET /api/notifications`
+  - [x] `PUT /api/notifications/:id/read`
+  - [x] `PUT /api/notifications/read-all`
+  - [x] `DELETE /api/notifications/:id`
+- [x] Préférences notifications utilisateur (JSON dans users table)
+- [x] Infrastructure email (SendGrid — `packages/notifications/src/sendgrid.ts`)
+- [ ] Email notifications actives (credentials non configurés)
+- [ ] WebSocket pour real-time (non implémenté)
+- [x] Infrastructure push web (VAPID — `packages/notifications/src/web-push.ts`)
+- [x] Infrastructure FCM (`packages/notifications/src/fcm.ts`)
+- [ ] Push notifications actives (credentials non configurés)
+- [x] Statistiques avancées (stats par user dans `GET /api/users/:id`)
+- [x] `GET /api/users/:id/stats`
+- [ ] `GET /api/users/:id/stats/progression` (détail progression non exposé)
+- [ ] `GET /api/users/:id/stats/calendar` (calendrier d'activité non implémenté)
+- [ ] `GET /api/stats/global`
 
 #### Frontend
-- [ ] Bell icon avec badge count
-- [ ] Dropdown notifications
-- [ ] Page notifications complète
-- [ ] Marquage lu/non-lu
-- [ ] Settings notifications
-- [ ] Dashboard stats utilisateur:
-  - Graphiques progression (Chart.js/Recharts)
-  - Calendrier activité
-  - Badges achievements
-  - Objectifs personnels
-- [ ] Partage profil (link + preview)
+- [x] Bell icon avec badge count — `NotificationBell.tsx`
+- [ ] Dropdown notifications (non trouvé — page dédiée à la place)
+- [x] Page notifications settings — `NotificationSettings.tsx`
+- [x] Marquage lu/non-lu
+- [x] Settings notifications (email + push par type)
+- [x] KiviatChart (radar chart compétences) — `KiviatChart.tsx`
+- [x] **BONUS** Leaderboard avec graphiques — `Leaderboard.tsx`
+- [ ] Graphiques progression temporels (Chart.js/Recharts)
+- [ ] Calendrier activité (heatmap)
+- [ ] Badges achievements
+- [ ] Objectifs personnels
+- [x] Partage profil (page UserProfile accessible par ID)
 - [ ] Export données personnelles
-- [ ] PWA notifications push
+- [x] PWA / push notifications infrastructure (`lib/capacitor/push.ts`, `hooks/usePushNotifications.ts`)
 
-#### Gamification (optionnel)
+#### Gamification
 - [ ] Système de badges
-- [ ] Achievements
+- [ ] Achievements (type ACHIEVEMENT_UNLOCKED prévu en DB)
 - [ ] Streaks
-- [ ] Leaderboards
+- [x] Leaderboards (global + amis)
+
+#### Premium (BONUS)
+- [x] Stripe intégration complète (`packages/payments/`)
+- [x] Page Pricing (`pages/Pricing.tsx`)
+- [x] Hook `usePremiumStatus`
+- [x] Webhook Stripe
+- [x] Portail facturation
 
 ### Critères de succès
-- ✅ Notifications temps réel fonctionnelles
-- ✅ Stats précises et utiles
-- ✅ Graphiques visuellement clairs
-- ✅ PWA installable
+- 🟡 Notifications temps réel (in-app OK, email/push non actives)
+- 🟡 Stats utilisateur (basiques OK, progression/calendrier non)
+- ✅ Leaderboard visuellement clair
+- 🟡 PWA installable (infrastructure Capacitor OK)
 
 ---
 
 ## PROJET 7: IA - Détection des Prises
 **Durée:** 4 semaines
-**Équipe:** ML Engineer (2) + Backend (1) + Frontend (1)
 **Dépendances:** P4
-**Statut:** 🔴 Non démarré
+**Statut:** 🟡 MVP livré (Canvas API + HSV, client-side)
 
-### Objectifs
-Détecter automatiquement les prises d'escalade sur les photos de voies.
+> **Implémentation :** Détection client-side via Canvas API + HSV thresholding (zéro dépendance).
+> Pas de modèle TensorFlow.js — approche couleur directe jugée suffisante pour l'usage.
 
 ### Livrables
 
-#### ML/IA
-- [ ] Dataset création:
-  - Collecte images prises d'escalade
-  - Annotation manuelle (100+ images)
-  - Augmentation données
-- [ ] Modèle détection:
-  - Segmentation par couleur HSV
-  - Détection contours OpenCV
-  - Classification type prise (optional)
-- [ ] Export modèle TensorFlow.js
-- [ ] Optimisation modèle (quantization)
-- [ ] Tests précision (>85%)
+#### Algorithme
+- [x] Conversion hex → HSV (`apps/web/src/lib/ai/hold-detection.ts`)
+- [x] Scan pixel avec tolérance HSV configurable
+- [x] Grid-based clustering + flood-fill
+- [x] Génération cercles normalisés avec score de confiance
+- [ ] Amélioration tolérance adaptative (luminosité variable)
+- [ ] Détection multi-couleurs simultanée
+- [ ] Mode "calibration" sur couleur échantillonnée depuis la photo
 
 #### Backend
-- [ ] API Endpoints IA:
-  - `POST /api/ai/detect-holds`
-  - `GET /api/routes/:id/hold-map`
-  - `PUT /api/routes/:id/hold-map`
-- [ ] Worker détection asynchrone
-- [ ] Stockage résultats (JSON)
-- [ ] Cache résultats
+- [x] `GET /api/routes/:id/hold-map` — lecture hold mapping
+- [x] `PUT /api/routes/:id/hold-map` — sauvegarde (OPENER/ADMIN propriétaire)
+- [ ] `POST /api/ai/detect-holds` — fallback serveur (sharp + analyse pixel)
+- [ ] Cache hold-map (stale-while-revalidate)
 
 #### Frontend
-- [ ] Interface annotation manuelle (admin/opener)
-- [ ] Visualisation prises détectées
-- [ ] Overlay interactif sur photo
-- [ ] Correction manuelle détection
-- [ ] Activation/désactivation détection auto
-- [ ] Loader pendant processing
-
-#### Library
-- [ ] `lib/ai/hold-detection.ts`
-- [ ] Preprocessing image
-- [ ] Post-processing résultats
-- [ ] Confidence score
-
-### Critères de succès
-- ✅ Détection >85% précision sur test set
-- ✅ Processing <5s par image
-- ✅ UI annotation intuitive
-- ✅ Fonctionne côté client (TF.js)
-
-### Fichiers principaux
-```
-apps/web/src/lib/ai/
-├── hold-detection.ts
-├── image-preprocessing.ts
-└── models/
-    └── hold-detector.tfjs
-
-apps/api/src/
-├── workers/hold-detection.worker.ts
-└── services/ai/
-    └── hold-detection.service.ts
-```
+- [x] `HoldOverlay.tsx` — overlay SVG interactif (drag, clic suppression, ajout manuel)
+- [x] `HoldDetection.tsx` — page `/routes/:id/holds` (OPENER/ADMIN)
+- [x] Intégration `RouteDetail.tsx` — affichage readOnly + bouton "Mapper"
+- [x] `holdDetectionAPI` dans `lib/api/index.ts`
+- [ ] Curseur couleur pour ajuster la teinte cible manuellement
+- [ ] Slider tolérance HSV (UI de réglage fin)
+- [ ] Export hold-map en image annotée
 
 ---
 
 ## PROJET 8: IA - Analyse Mouvement
 **Durée:** 4 semaines
-**Équipe:** ML Engineer (2) + Backend (1) + Frontend (1)
 **Dépendances:** P4, P7
-**Statut:** 🔴 Non démarré
+**Statut:** 🟡 MVP livré (Claude Opus 4.6 Vision via @anthropic-ai/sdk)
 
-### Objectifs
-Analyser les mouvements d'escalade via MediaPipe et fournir feedback IA.
+> **Implémentation :** Extraction de 5 frames Cloudinary (so_10p → so_90p) + analyse Claude Vision.
+> Pas de MediaPipe — Claude Vision suffit pour le niveau de détail actuel.
+> **Prérequis :** `ANTHROPIC_API_KEY` dans `.env` + Cloudinary configuré.
 
 ### Livrables
 
-#### ML/IA
-- [ ] Intégration MediaPipe Pose
-- [ ] Intégration MediaPipe Hands
-- [ ] Extraction poses par frame
-- [ ] Calcul métriques:
-  - Centre de gravité
-  - Angles articulations
-  - Vélocité mouvements
-  - Stabilité
-- [ ] Algorithme scoring:
-  - Fluidité (30%)
-  - Technique (25%)
-  - Précision (20%)
-  - Endurance (15%)
-  - Créativité (10%)
-- [ ] Génération suggestions automatiques
-- [ ] Détection patterns sous-optimaux
-- [ ] Identification moments clés (highlights)
+#### IA/Vision
+- [x] Extraction frames Cloudinary (`extractCloudinaryFrames()` — URL transformations)
+- [x] Appel Claude Opus 4.6 avec adaptive thinking (`analyzeWithClaude()`)
+- [x] Prompt structuré → JSON scores + suggestions + highlights
+- [x] Calcul score global pondéré (`aggregateScores()`)
+- [ ] Fallback si Claude renvoie JSON invalide (retry + scores par défaut améliorés)
+- [ ] Extraction frames locale (sharp) si Cloudinary non configuré
+- [ ] Prompt multi-langue (EN/FR selon user locale)
 
 #### Backend
-- [ ] Migration: Analysis model
-- [ ] API Endpoints Analyse:
-  - `POST /api/ai/analyze-video`
-  - `GET /api/analysis/:id`
-  - `GET /api/routes/:id/analyses`
-- [ ] Worker analyse vidéo (long-running)
-- [ ] Queue Bull pour jobs
-- [ ] Stabilisation vidéo (optional)
-- [ ] Notifications fin d'analyse
+- [x] Schema Drizzle: Analysis model (`analyses.ts`) — déjà en DB
+- [x] `POST /api/ai/analyze-video` — upload + frames + Claude + stockage
+- [x] `GET /api/analysis/:id` — avec video + route
+- [x] `GET /api/analysis/route/:routeId` — analyses d'une voie
+- [x] `GET /api/analysis/user/:userId` — analyses d'un utilisateur
+- [ ] Job queue (BullMQ) — analyse asynchrone pour éviter timeout HTTP
+- [ ] Webhook / SSE pour notifier la fin d'analyse
+- [ ] Notification in-app "Votre analyse est prête"
+- [ ] Rate limiting (max 3 analyses/jour/user sans premium)
 
 #### Frontend
-- [ ] Upload vidéo pour analyse
-- [ ] Status analyse (pending/processing/done)
-- [ ] Page résultats analyse:
-  - Score global
-  - Scores détaillés (radar chart)
-  - Timeline avec highlights
-  - Suggestions texte
-  - Skeleton overlay sur vidéo
-- [ ] Comparaison vidéos
-- [ ] Historique analyses
-- [ ] Export rapport PDF
-
-#### Library
-- [ ] `lib/ai/movement-analysis.ts`
-- [ ] `lib/ai/pose-metrics.ts`
-- [ ] `lib/ai/scoring-algorithm.ts`
-- [ ] `lib/ai/suggestions-generator.ts`
-
-### Critères de succès
-- ✅ Analyse complète vidéo <30s
-- ✅ Scores pertinents et reproductibles
-- ✅ Suggestions utiles pour grimpeurs
-- ✅ Visualisation claire des résultats
-
-### Fichiers principaux
-```
-apps/web/src/lib/ai/
-├── movement-analysis.ts
-├── pose-metrics.ts
-├── scoring-algorithm.ts
-└── suggestions-generator.ts
-
-apps/api/src/
-├── workers/video-analysis.worker.ts
-└── services/ai/
-    ├── movement-analysis.service.ts
-    └── video-processing.service.ts
-
-apps/web/src/pages/
-├── AnalyzeVideo.tsx
-└── AnalysisResults.tsx
-```
+- [x] `AnalyzeVideo.tsx` — `/routes/:id/analyze` (upload + progression XHR)
+- [x] `AnalysisResults.tsx` — `/analysis/:id` (cercle global + barres + suggestions)
+- [x] `analysisAPI` dans `lib/api/index.ts`
+- [x] Intégration `RouteDetail.tsx` — bouton "Analyser" + liste analyses récentes
+- [ ] Radar chart (KiviatChart existant réutilisable)
+- [ ] Comparaison deux analyses côte à côte
+- [ ] Historique complet `/users/:id/analyses`
+- [ ] Export rapport PDF (html2canvas ou jsPDF)
 
 ---
 
 ## 📅 Timeline Recommandé
 
-### Phase 1: MVP (2 mois)
+### Phase 1: MVP (2 mois) — ✅ TERMINÉE
 ```
 Mois 1:
-├─ Semaines 1-2: P1 (Infrastructure & Auth)
-└─ Semaines 3-4: P2 (Gestion Voies)
+├─ Semaines 1-2: P1 (Infrastructure & Auth) ✅
+└─ Semaines 3-4: P2 (Gestion Voies) ✅
 
 Mois 2:
-├─ Semaines 5-6: P3 (Fonctionnalités Sociales)
-└─ Semaines 7-8: P4 (Polish & Déploiement)
+├─ Semaines 5-6: P3 (Fonctionnalités Sociales) ✅
+└─ Semaines 7-8: P4 (Polish & Déploiement) 🟡 Partiel
 ```
 
-### Phase 2: Enrichissement (2 mois)
+### Phase 2: Enrichissement (2 mois) — 🟡 EN COURS
 ```
 Mois 3:
-├─ Semaines 9-11: P5 (Médias & Recherche)
-└─ Semaines 12-14: P6 (Engagement & Notifs)
+├─ Semaines 9-11: P5 (Médias & Recherche) 🟡 Partiel
+└─ Semaines 12-14: P6 (Engagement & Notifs) 🟡 Partiel
 
 Mois 4:
 └─ Semaines 15-16: Buffer & fixes
 ```
 
-### Phase 3: Intelligence Artificielle (2 mois)
+### Phase 3: Intelligence Artificielle (2 mois) — 🟡 MVP LIVRÉ
 ```
 Mois 5:
-└─ Semaines 17-20: P7 (Détection Prises)
+└─ Semaines 17-20: P7 (Détection Prises) ✅ MVP — HSV client-side
 
 Mois 6:
-└─ Semaines 21-24: P8 (Analyse Mouvement)
+└─ Semaines 21-24: P8 (Analyse Mouvement) ✅ MVP — Claude Vision
 ```
 
-**Total: ~6 mois pour application complète**
+---
+
+## 🎯 Prochaines étapes de développement
+
+> Mis à jour le 2026-02-26 — Phase 3 (P7+P8) MVP livrée.
 
 ---
 
-## 🔄 Workflow par Projet
+### 🔴 Blockers immédiats (à faire avant de tester)
 
-### 1. Planification (Jour 1-2)
-- [ ] Kickoff meeting
-- [ ] Clarification requirements
-- [ ] Breakdown tâches (tickets)
-- [ ] Estimation effort
-- [ ] Assignment équipe
+#### 1. Variables d'environnement manquantes
 
-### 2. Développement (Jours 3-8)
-- [ ] Setup branches Git
-- [ ] Développement en parallèle
-- [ ] Daily standups
-- [ ] Code reviews
-- [ ] Tests unitaires
+Ajouter dans `.env` (racine du projet) :
 
-### 3. Intégration (Jours 9-10)
-- [ ] Merge branches
-- [ ] Tests d'intégration
-- [ ] Fix bugs
-- [ ] Documentation
+```bash
+# P8 — Analyse IA (REQUIS pour que l'analyse vidéo fonctionne)
+ANTHROPIC_API_KEY=sk-ant-api03-...
 
-### 4. Review & Demo (Jour 11-12)
-- [ ] Demo aux stakeholders
-- [ ] Feedback collecte
-- [ ] Ajustements mineurs
-- [ ] Merge vers main
+# Cloudinary (déjà configuré — vérifier que resource_type video est activé)
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+```
 
-### 5. Déploiement (Jour 13-14)
-- [ ] Deploy staging
-- [ ] QA staging
-- [ ] Deploy production
-- [ ] Monitoring post-deploy
-- [ ] Rétrospective projet
+> **Sans `ANTHROPIC_API_KEY`**, `POST /api/ai/analyze-video` retourne 503.
+> **Sans Cloudinary**, l'analyse vidéo est impossible (frames non extractibles).
+
+#### 2. Vérifier Cloudinary — autorisations vidéo
+
+Dans le dashboard Cloudinary, s'assurer que le plan autorise l'upload de ressources `video`.
+Le plan gratuit Cloudinary supporte les vidéos jusqu'à ~100MB.
 
 ---
 
-## 📋 Checklist Générale par Projet
+### 🟡 Améliorations P7 (Hold Detection) — Priorité haute
 
-### Avant de commencer
-- [ ] Dépendances techniques satisfaites
-- [ ] Équipe assignée et disponible
-- [ ] Requirements clarifiés
-- [ ] User stories rédigées
-- [ ] Maquettes approuvées (si UI)
-- [ ] Branch créée depuis main
+#### A. Réglage manuel de la tolérance HSV
+**Fichier :** `apps/web/src/pages/HoldDetection.tsx`
+**Quoi :** Ajouter un slider `<input type="range" min="0.5" max="2" step="0.1">` qui passe la valeur `tolerance` à `detectHolds(canvas, hex, tolerance)`.
+**Pourquoi :** Les prises de couleur similaire au mur sont parfois mal détectées.
 
-### Pendant développement
-- [ ] Code reviews quotidiens
-- [ ] Tests écrits avec le code
-- [ ] Documentation inline
-- [ ] Commits atomiques et clairs
-- [ ] Pas de code commented out
-- [ ] Pas de console.log en production
+#### B. Picker de couleur depuis la photo
+**Fichier :** `apps/web/src/components/HoldOverlay.tsx`
+**Quoi :** Mode "eyedropper" — clic sur un pixel de l'image → extraire sa couleur hex → relancer `detectHolds()` avec cette couleur au lieu de `route.holdColorHex`.
+**Pourquoi :** La couleur saisie lors de la création de voie peut différer de la teinte exacte des prises sur photo.
 
-### Avant merge
-- [ ] Tous les tests passent
-- [ ] Coverage > 80%
-- [ ] Linting pass (0 errors)
-- [ ] Build production réussi
-- [ ] Documentation à jour
-- [ ] Changelog mis à jour
-- [ ] Demo fonctionnelle
+```typescript
+// Exemple d'extraction couleur depuis canvas
+const ctx = canvas.getContext('2d');
+const pixel = ctx.getImageData(x, y, 1, 1).data;
+const hex = `#${pixel[0].toString(16).padStart(2,'0')}${pixel[1].toString(16).padStart(2,'0')}${pixel[2].toString(16).padStart(2,'0')}`;
+```
 
-### Après déploiement
-- [ ] Health checks OK
-- [ ] Monitoring actif
-- [ ] Pas d'erreurs Sentry
-- [ ] Performance acceptable
-- [ ] Feedback utilisateurs collecté
+#### C. Afficher le hold-map dans les cards de voies
+**Fichier :** `apps/web/src/pages/RoutesHub.tsx` + `apps/web/src/components/RouteCardWithStatus.tsx`
+**Quoi :** Petit badge "✓ prises mappées" sur les RouteCards qui ont un `holdMapping`.
+**API :** `holdMapping` est déjà retourné par `GET /api/routes`.
 
 ---
 
-## 🎯 Métriques de Succès Globales
+### 🟡 Améliorations P8 (Analyse Mouvement) — Priorité haute
 
-### Technique
-- ✅ Uptime > 99.5%
-- ✅ Temps réponse API < 200ms (P95)
-- ✅ Lighthouse score > 90
-- ✅ Test coverage > 80%
-- ✅ Zero erreurs critiques
+#### A. Analyse asynchrone (éviter timeout)
+**Problème :** L'appel Claude peut durer 30-60 secondes. Le XHR risque de timeout.
+**Solution :** Passer en job asynchrone.
 
-### Business
-- ✅ 100+ utilisateurs actifs (fin Phase 1)
-- ✅ 500+ voies créées (fin Phase 1)
-- ✅ 1000+ validations (fin Phase 2)
-- ✅ Taux rétention J7 > 40%
-- ✅ NPS > 50
+```
+1. POST /api/ai/analyze-video
+   → Upload vidéo → créer video{} → créer analyses{status: 'processing'}
+   → Déclencher job en background (setImmediate ou BullMQ)
+   → Retourner { analysisId } immédiatement (202 Accepted)
 
-### Expérience
-- ✅ Temps création voie < 3 min
-- ✅ Temps chargement page < 2s
-- ✅ 0 bugs bloquants
-- ✅ Feedback positif > 80%
+2. GET /api/analysis/:id
+   → Si status === 'processing' → retourner { status: 'processing' }
+   → Si status === 'done' → retourner les scores
+
+3. Frontend : polling toutes les 3s sur GET /api/analysis/:id
+```
+
+**Fichiers à modifier :**
+- `apps/api/src/routes/analyses.ts` — retourner 202 + lancer analyse en arrière-plan
+- `apps/api/src/services/video-analysis.service.ts` — pas de changement
+- `apps/web/src/pages/AnalyzeVideo.tsx` — polling sur `analysisAPI.getAnalysis(id)` au lieu de l'état XHR
+
+**Note DB :** Ajouter un champ `status` dans la table `analyses` via migration Drizzle :
+```typescript
+// packages/database/src/schema/analyses.ts
+status: varchar('status', { length: 20 }).notNull().default('processing'),
+// valeurs : 'processing' | 'done' | 'error'
+```
+
+#### B. Radar chart (KiviatChart existant)
+**Fichier :** `apps/web/src/pages/AnalysisResults.tsx`
+**Quoi :** Remplacer les barres de progression par le `KiviatChart` déjà existant.
+**Import :** `import { KiviatChart } from '../components/KiviatChart'`
+**Data :** Mapper les 5 dimensions dans le format attendu par KiviatChart.
+
+#### C. Historique analyses utilisateur
+**Fichier :** `apps/web/src/pages/UserProfile.tsx`
+**Quoi :** Ajouter une section "Mes analyses" avec `analysisAPI.getUserAnalyses(userId)`.
+**Afficher :** Tableau des dernières analyses avec score, voie, date.
 
 ---
 
-## 🚀 Prochaines Étapes
+### 🟠 Finir P4 (Polish & Déploiement) — Priorité moyenne
 
-1. **Valider ce plan** avec l'équipe et stakeholders
-2. **Prioriser** les projets selon business needs
-3. **Constituer les équipes** pour P1
-4. **Lancer P1** dès que possible
-5. **Itérer** sur base des learnings
+#### Déploiement production
+```
+Frontend  → Vercel (auto-deploy sur push master)
+Backend   → Railway ou Fly.io (Dockerfile à créer)
+Base de données → Supabase (déjà configuré)
+Médias    → Cloudinary (déjà configuré)
+```
+
+**Variables d'env production à configurer :**
+```
+DATABASE_URL=postgresql://...
+BETTER_AUTH_SECRET=<32 chars random>
+BETTER_AUTH_URL=https://api.climbtracker.app
+FRONTEND_URL=https://climbtracker.app
+CLOUDINARY_*=...
+ANTHROPIC_API_KEY=...
+```
+
+#### CI/CD GitHub Actions
+Créer `.github/workflows/ci.yml` :
+```yaml
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test
+```
+
+#### Activer les notifications
+1. Créer un compte SendGrid → configurer `SENDGRID_API_KEY` + `SENDGRID_FROM_EMAIL`
+2. Générer clés VAPID → `npx web-push generate-vapid-keys` → configurer `VAPID_*`
+3. Les routes et le code sont déjà en place (`apps/api/src/lib/notifications.ts`)
 
 ---
 
-*Ce plan est vivant et doit être adapté selon les retours et contraintes.*
+### 🟢 Nouvelles features (Phase 4 — post-MVP)
+
+#### P9 — Mode gym / Plan de salle interactif
+- Plan SVG de la salle avec secteurs cliquables
+- Vue "vue du dessus" avec densité de voies par secteur
+- Filtrage des voies par zone géographique sur le plan
+
+#### P10 — Comparaison et progression
+- Graphique de progression grade max par semaine/mois
+- Comparaison avec "grimpeurs similaires" (même niveau)
+- Objectifs personnels avec tracking
+
+#### P11 — Social renforcé
+- Stories d'escalade (vidéo courte 15s à la Instagram)
+- Challenges entre amis (qui valide une voie en premier)
+- Commentaires avec timestamp vidéo
+
+---
+
+### 🔧 Qualité & Tests
+
+#### TypeScript strict mode
+Activer dans `tsconfig.json` :
+```json
+{ "strict": true, "noUncheckedIndexedAccess": true }
+```
+Corriger les erreurs qui apparaissent.
+
+#### Tests Playwright E2E
+Parcours critiques à couvrir :
+1. Inscription → connexion → déconnexion
+2. Créer voie → mapper prises → sauvegarder
+3. Uploader vidéo → attendre analyse → voir résultats
+4. Valider une voie → vérifier apparition leaderboard
+
+#### Validation Zod API
+Toutes les routes nouvelles (hold-detection, analyses) n'utilisent pas encore `@hono/zod-validator`.
+Ajouter validation sur les bodies :
+```typescript
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+
+const holdMapSchema = z.object({
+  holdMapping: z.array(z.object({
+    id: z.string().uuid(),
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+    radius: z.number().min(0).max(1),
+    confidence: z.number().min(0).max(1),
+  }))
+});
+
+app.put('/:id/hold-map', requireAuth, requireRole('OPENER','ADMIN'),
+  zValidator('json', holdMapSchema), async (c) => { ... });
+```
+
+---
+
+*Ce plan est vivant et mis à jour automatiquement selon l'état réel du projet.*

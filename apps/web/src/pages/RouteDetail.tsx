@@ -11,6 +11,9 @@ import { ImageViewer } from '../components/ImageViewer';
 import { EditRouteModal } from '../components/EditRouteModal';
 import { HoldColorIndicator } from '../components/HoldColorIndicator';
 import { getDifficultyColor } from '../utils/gradeColors';
+import { HoldOverlay } from '../components/HoldOverlay';
+import { holdDetectionAPI, analysisAPI, Analysis } from '../lib/api';
+import { DetectedHold } from '../lib/ai/hold-detection';
 
 interface UserValidation {
   id: string;
@@ -34,11 +37,15 @@ export default function RouteDetail() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [userValidation, setUserValidation] = useState<UserValidation | null>(null);
+  const [holdMapping, setHoldMapping] = useState<DetectedHold[] | null>(null);
+  const [recentAnalyses, setRecentAnalyses] = useState<Analysis[]>([]);
 
   useEffect(() => {
     if (id) {
       loadRoute();
       loadUserValidation();
+      loadHoldMap();
+      loadRecentAnalyses();
     }
   }, [id, user]);
 
@@ -79,6 +86,26 @@ export default function RouteDetail() {
       }
     } catch (err: any) {
       console.error('Failed to load user validation:', err);
+    }
+  };
+
+  const loadHoldMap = async () => {
+    if (!id) return;
+    try {
+      const holds = await holdDetectionAPI.getHoldMap(id);
+      setHoldMapping(holds);
+    } catch {
+      // Hold map is optional — ignore errors
+    }
+  };
+
+  const loadRecentAnalyses = async () => {
+    if (!id) return;
+    try {
+      const data = await analysisAPI.getRouteAnalyses(id);
+      setRecentAnalyses(data.slice(0, 3));
+    } catch {
+      // Analyses are optional — ignore errors
     }
   };
 
@@ -144,6 +171,7 @@ export default function RouteDetail() {
 
   const canEdit = user?.id === route.openerId || (user as any)?.role === 'ADMIN';
   const canDelete = (user as any)?.role === 'ADMIN';
+  const canMapHolds = user?.id === route.openerId || (user as any)?.role === 'ADMIN';
   const canChangeStatus = (user as any)?.role === 'ADMIN';
 
   const difficultyColor = getDifficultyColor(route.difficulty);
@@ -281,6 +309,92 @@ export default function RouteDetail() {
               </p>
             </div>
           )}
+
+          {/* Hold Mapping */}
+          {holdMapping && holdMapping.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-extrabold text-climb-dark">Carte des prises</h2>
+                {canMapHolds && (
+                  <Link
+                    to={`/routes/${route.id}/holds`}
+                    className="text-xs font-bold text-hold-blue flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">edit</span>
+                    Modifier
+                  </Link>
+                )}
+              </div>
+              <HoldOverlay
+                imageUrl={route.mainPhoto}
+                holdColorHex={route.holdColorHex}
+                initialHolds={holdMapping}
+                readOnly={true}
+              />
+            </div>
+          )}
+
+          {!holdMapping && canMapHolds && (
+            <div className="neo-card bg-hold-blue/10 p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-hold-blue text-[20px]">auto_awesome</span>
+                <span className="text-sm font-bold text-climb-dark">Mapper les prises</span>
+              </div>
+              <Link
+                to={`/routes/${route.id}/holds`}
+                className="px-3 py-1.5 bg-hold-blue text-white rounded-xl font-bold text-xs border-2 border-climb-dark shadow-neo-sm"
+              >
+                Démarrer
+              </Link>
+            </div>
+          )}
+
+          {/* AI Analysis */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-extrabold text-climb-dark">Analyse IA</h2>
+              <Link
+                to={`/routes/${route.id}/analyze`}
+                className="px-3 py-1.5 bg-hold-pink text-white rounded-xl font-bold text-xs border-2 border-climb-dark shadow-neo-sm flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[12px]">psychology</span>
+                Analyser
+              </Link>
+            </div>
+            {recentAnalyses.length > 0 ? (
+              <div className="space-y-2">
+                {recentAnalyses.map(analysis => (
+                  <Link
+                    key={analysis.id}
+                    to={`/analysis/${analysis.id}`}
+                    className="neo-card p-3 flex items-center justify-between gap-3 block"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-xl border-2 border-climb-dark flex items-center justify-center font-extrabold text-sm"
+                        style={{
+                          backgroundColor: analysis.globalScore >= 70 ? '#22C55E20' : '#F9740820',
+                          color: analysis.globalScore >= 70 ? '#22C55E' : '#F97316',
+                        }}
+                      >
+                        {Math.round(analysis.globalScore)}
+                      </div>
+                      <span className="text-xs text-climb-dark/60 font-medium">
+                        {new Date(analysis.createdAt).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                    <span className="material-symbols-outlined text-climb-dark/40 text-[16px]">
+                      chevron_right
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="neo-card p-4 text-center">
+                <p className="text-sm text-climb-dark/60 font-medium">Aucune analyse pour l'instant</p>
+              </div>
+            )}
+          </div>
 
           {/* Admin Actions */}
           {(canEdit || canDelete || canChangeStatus) && (

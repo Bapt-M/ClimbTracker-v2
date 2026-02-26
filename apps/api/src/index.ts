@@ -28,6 +28,8 @@ import analyticsRoutes from './routes/analytics';
 import stripeRoutes from './routes/stripe';
 import notificationsRoutes from './routes/notifications';
 import pushSubscriptionsRoutes from './routes/push-subscriptions';
+import holdDetectionRoutes from './routes/hold-detection';
+import analysesRoutes from './routes/analyses';
 
 // Import notifications initialization
 import { initializeNotifications } from './lib/notifications';
@@ -105,6 +107,9 @@ app.route('/api/analytics', analyticsRoutes);
 app.route('/api/stripe', stripeRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/push-subscriptions', pushSubscriptionsRoutes);
+app.route('/api/routes', holdDetectionRoutes);
+app.route('/api/ai', analysesRoutes);
+app.route('/api/analysis', analysesRoutes);
 
 // Initialize notifications system
 initializeNotifications();

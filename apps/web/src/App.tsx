@@ -15,6 +15,9 @@ const UserProfile = lazy(() => import('./pages/UserProfile'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const NotificationSettings = lazy(() => import('./pages/NotificationSettings'));
+const HoldDetection = lazy(() => import('./pages/HoldDetection'));
+const AnalyzeVideo = lazy(() => import('./pages/AnalyzeVideo'));
+const AnalysisResults = lazy(() => import('./pages/AnalysisResults'));
 
 // Loading spinner component
 function LoadingSpinner() {
@@ -158,6 +161,31 @@ function App() {
           element={
             <ProtectedRoute>
               <NotificationSettings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/routes/:id/holds"
+          element={
+            <ProtectedRoute>
+              <HoldDetection />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/routes/:id/analyze"
+          element={
+            <ProtectedRoute>
+              <AnalyzeVideo />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analysis/:id"
+          element={
+            <ProtectedRoute>
+              <AnalysisResults />
             </ProtectedRoute>
           }
         />

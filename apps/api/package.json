@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@climbtracker/analytics": "workspace:*",
     "@climbtracker/auth": "workspace:*",
     "@climbtracker/database": "workspace:*",

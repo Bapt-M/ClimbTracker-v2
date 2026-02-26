@@ -49,6 +49,7 @@ export interface Route {
   updatedAt: string;
   validationsCount?: number;
   commentsCount?: number;
+  holdMapping?: unknown;
 }
 
 export interface RouteFilters {
@@ -685,5 +686,123 @@ export const notificationPreferencesAPI = {
       body: JSON.stringify(data),
     });
     return response.data;
+  },
+};
+
+// ────────────────────────────────────────────────────────────
+// Hold Detection
+// ────────────────────────────────────────────────────────────
+
+export interface DetectedHold {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  confidence: number;
+}
+
+export const holdDetectionAPI = {
+  getHoldMap: async (routeId: string): Promise<DetectedHold[] | null> => {
+    const response = await fetchAPI<{
+      success: boolean;
+      data: { holdMapping: DetectedHold[] | null };
+    }>(`/api/routes/${routeId}/hold-map`);
+    return response.data?.holdMapping ?? null;
+  },
+
+  saveHoldMap: async (routeId: string, holds: DetectedHold[]): Promise<void> => {
+    await fetchAPI(`/api/routes/${routeId}/hold-map`, {
+      method: 'PUT',
+      body: JSON.stringify({ holdMapping: holds }),
+    });
+  },
+};
+
+// ────────────────────────────────────────────────────────────
+// AI Analysis
+// ────────────────────────────────────────────────────────────
+
+export interface Analysis {
+  id: string;
+  videoId: string;
+  routeId: string;
+  globalScore: number;
+  detailScores: {
+    fluidite: number;
+    technique: number;
+    precision: number;
+    endurance: number;
+    creativite: number;
+  };
+  suggestions: string[];
+  highlights: string[];
+  createdAt: string;
+  video?: { id: string; thumbnailUrl: string; uploadedAt: string };
+  route?: { id: string; name: string; difficulty: string; mainPhoto: string };
+}
+
+export const analysisAPI = {
+  analyzeVideo: async (
+    routeId: string,
+    videoFile: File,
+    onProgress?: (pct: number) => void
+  ): Promise<{ analysisId: string }> => {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('video', videoFile);
+      formData.append('routeId', routeId);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_URL}/api/ai/analyze-video`);
+      xhr.withCredentials = true;
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            resolve({ analysisId: data.data?.analysisId });
+          } catch {
+            reject(new Error('Invalid response'));
+          }
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText);
+            reject(new Error(err.error || `Upload failed: ${xhr.status}`));
+          } catch {
+            reject(new Error(`Upload failed: ${xhr.status}`));
+          }
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(formData);
+    });
+  },
+
+  getAnalysis: async (analysisId: string): Promise<Analysis> => {
+    const response = await fetchAPI<{ success: boolean; data: { analysis: Analysis } }>(
+      `/api/analysis/${analysisId}`
+    );
+    return response.data.analysis;
+  },
+
+  getRouteAnalyses: async (routeId: string): Promise<Analysis[]> => {
+    const response = await fetchAPI<{ success: boolean; data: { analyses: Analysis[] } }>(
+      `/api/analysis/route/${routeId}`
+    );
+    return response.data?.analyses || [];
+  },
+
+  getUserAnalyses: async (userId: string): Promise<Analysis[]> => {
+    const response = await fetchAPI<{ success: boolean; data: { analyses: Analysis[] } }>(
+      `/api/analysis/user/${userId}`
+    );
+    return response.data?.analyses || [];
   },
 };
