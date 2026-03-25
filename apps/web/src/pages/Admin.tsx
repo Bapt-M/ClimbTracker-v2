@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../lib/auth-client';
 import { BottomNav } from '../components/BottomNav';
+import { TopNav } from '../components/TopNav';
 import { AdminGymLayout } from '../components/admin/AdminGymLayout';
 import { AdminRoutes } from '../components/admin/AdminRoutes';
 import { AdminUsers } from '../components/admin/AdminUsers';
@@ -42,10 +43,11 @@ export default function Admin() {
   ];
 
   return (
-    <div className="relative min-h-screen flex flex-col w-full max-w-md mx-auto overflow-hidden bg-cream">
+    <div className="relative min-h-screen flex flex-col w-full max-w-md md:max-w-2xl mx-auto overflow-hidden md:overflow-visible bg-cream md:pt-16">
+      <TopNav />
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-cream/90 backdrop-blur-md">
-        <div className="flex items-center justify-between px-6 pt-12 pb-4">
+      <div className="sticky top-0 md:top-16 z-40 bg-cream/90 backdrop-blur-md">
+        <div className="flex items-center justify-between px-6 pt-12 md:pt-4 pb-4">
           <div>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-2xl bg-hold-orange flex items-center justify-center border-2 border-climb-dark shadow-neo-sm -rotate-3">
@@ -86,7 +88,7 @@ export default function Admin() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32 md:pb-6">
         <div className="px-4">
           {activeTab === 'gym-layout' && <AdminGymLayout />}
           {activeTab === 'routes' && <AdminRoutes />}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { routesAPI, analysisAPI, Route } from '../lib/api';
+import { TopNav } from '../components/TopNav';
 
 type UploadState = 'idle' | 'uploading' | 'analyzing' | 'done' | 'error';
 
@@ -80,9 +81,10 @@ export default function AnalyzeVideo() {
   const isIdle = state === 'idle' || state === 'error';
 
   return (
-    <div className="min-h-screen bg-cream">
-      <div className="sticky top-0 z-40 bg-cream/90 backdrop-blur-md border-b-2 border-climb-dark">
-        <div className="flex items-center gap-4 px-4 py-3 max-w-md mx-auto">
+    <div className="relative min-h-screen flex flex-col w-full max-w-md md:max-w-2xl mx-auto overflow-hidden md:overflow-visible bg-cream md:pt-16">
+      <TopNav />
+      <div className="sticky top-0 md:top-16 z-40 bg-cream/90 backdrop-blur-md border-b-2 border-climb-dark">
+        <div className="flex items-center gap-4 px-4 pt-12 md:pt-4 py-3">
           <Link
             to={`/routes/${id}`}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-climb-dark shadow-neo"
@@ -96,7 +98,7 @@ export default function AnalyzeVideo() {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 py-6 pb-12 space-y-5">
+      <div className="px-4 py-6 pb-12 md:pb-6 space-y-5">
         {/* Route preview */}
         {route?.mainPhoto && (
           <div className="neo-card overflow-hidden p-0">

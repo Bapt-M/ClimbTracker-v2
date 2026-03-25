@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { analysisAPI, Analysis } from '../lib/api';
+import { TopNav } from '../components/TopNav';
 
 function GlobalScoreCircle({ score }: { score: number }) {
   const color =
@@ -108,9 +109,10 @@ export default function AnalysisResults() {
   });
 
   return (
-    <div className="min-h-screen bg-cream">
-      <div className="sticky top-0 z-40 bg-cream/90 backdrop-blur-md border-b-2 border-climb-dark">
-        <div className="flex items-center gap-4 px-4 py-3 max-w-md mx-auto">
+    <div className="relative min-h-screen flex flex-col w-full max-w-md md:max-w-2xl mx-auto overflow-hidden md:overflow-visible bg-cream md:pt-16">
+      <TopNav />
+      <div className="sticky top-0 md:top-16 z-40 bg-cream/90 backdrop-blur-md border-b-2 border-climb-dark">
+        <div className="flex items-center gap-4 px-4 pt-12 md:pt-4 py-3">
           {analysis.route && (
             <Link
               to={`/routes/${analysis.routeId}`}
@@ -130,7 +132,7 @@ export default function AnalysisResults() {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 py-6 pb-12 space-y-5">
+      <div className="px-4 py-6 pb-12 md:pb-6 space-y-5">
         {/* Route card */}
         {analysis.route && (
           <div className="neo-card overflow-hidden p-0">

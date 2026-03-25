@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../lib/auth-client';
 import { BottomNav } from '../components/BottomNav';
+import { TopNav } from '../components/TopNav';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import {
   pushSubscriptionsAPI,
@@ -199,10 +200,11 @@ export default function NotificationSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-cream pb-20">
+    <div className="relative min-h-screen flex flex-col w-full max-w-md md:max-w-2xl mx-auto overflow-hidden md:overflow-visible bg-cream md:pt-16">
+      <TopNav />
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-cream border-b border-climb-dark/10">
-        <div className="max-w-xl mx-auto px-4 py-4 flex items-center gap-4">
+      <header className="sticky top-0 md:top-16 z-10 bg-cream border-b border-climb-dark/10">
+        <div className="px-4 pt-12 md:pt-4 pb-4 flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
             className="p-2 -ml-2 hover:bg-climb-dark/5 rounded-lg transition-colors"
@@ -213,7 +215,7 @@ export default function NotificationSettings() {
         </div>
       </header>
 
-      <main className="max-w-xl mx-auto px-4 py-6 space-y-6">
+      <main className="flex-1 overflow-y-auto no-scrollbar px-4 py-6 pb-24 md:pb-6 space-y-6">
         {/* Global toggles */}
         <section className="bg-white rounded-2xl p-4 space-y-4">
           <h2 className="font-semibold text-climb-dark">Canaux de notification</h2>
