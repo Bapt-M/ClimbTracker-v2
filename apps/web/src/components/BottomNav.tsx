@@ -43,7 +43,7 @@ export const BottomNav = () => {
   const isProfileActive = isActive(profilePath);
 
   return (
-    <div className="fixed bottom-0 z-50 w-full max-w-md bg-white border-t-4 border-climb-dark pb-8 pt-4 shadow-[0_-8px_20px_rgba(0,0,0,0.05)]">
+    <div className="fixed bottom-0 z-50 w-full max-w-md bg-white border-t-4 border-climb-dark pb-8 pt-4 shadow-[0_-8px_20px_rgba(0,0,0,0.05)] md:hidden">
       <div className="grid grid-cols-5 h-12 px-2">
         {/* Explore */}
         <Link
