@@ -10,6 +10,7 @@ import { GymLayoutSelector } from '../components/GymLayoutSelector';
 import { CustomSelect } from '../components/CustomSelect';
 import { uploadRoutePhoto } from '../lib/upload';
 import { categorizeHexColor } from '../lib/utils/colorUtils';
+import { TopNav } from '../components/TopNav';
 
 const DIFFICULTY_OPTIONS = [
   { value: 'Vert', label: 'Vert', color: '#22c55e' },
@@ -127,10 +128,12 @@ export default function CreateRoute() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col w-full max-w-md mx-auto overflow-hidden bg-cream">
+    <div className="relative min-h-screen flex flex-col w-full max-w-md md:max-w-none mx-auto overflow-hidden md:overflow-visible bg-cream md:pt-16">
+      <TopNav />
+
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-cream/90 backdrop-blur-md border-b-2 border-climb-dark/10">
-        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+      <div className="sticky top-0 md:top-16 z-40 bg-cream/90 backdrop-blur-md border-b-2 border-climb-dark/10">
+        <div className="flex items-center justify-between px-5 pt-12 md:pt-4 pb-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
@@ -161,182 +164,218 @@ export default function CreateRoute() {
       </div>
 
       {/* Form */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-24 px-5 py-6">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {error && (
-            <div className="p-4 bg-hold-pink/10 border-2 border-hold-pink/30 rounded-2xl text-hold-pink text-sm font-bold">
-              {error}
+      <div className="flex-1 overflow-y-auto md:overflow-visible pb-24 md:pb-6 px-5 md:px-8 py-6">
+        <div className="md:flex md:gap-8 md:items-start">
+
+          {/* Left — form */}
+          <div className="md:w-1/2 min-w-0">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="p-4 bg-hold-pink/10 border-2 border-hold-pink/30 rounded-2xl text-hold-pink text-sm font-bold">
+                  {error}
+                </div>
+              )}
+
+              {/* Name */}
+              <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                <label className="block text-sm font-extrabold text-climb-dark mb-2">
+                  Nom de la voie *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold placeholder:text-climb-dark/40 focus:outline-none focus:border-climb-dark transition-colors"
+                  placeholder="Ex: La Dalle du Debutant"
+                />
+              </div>
+
+              {/* Difficulty */}
+              <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                <label className="block text-sm font-extrabold text-climb-dark mb-2">
+                  Grade de difficulte (couleur de cotation) *
+                </label>
+                <p className="text-xs text-climb-dark/60 font-bold mb-3">
+                  Couleur attribuee par l'ouvreur pour indiquer le niveau
+                </p>
+                <CustomSelect
+                  options={DIFFICULTY_OPTIONS}
+                  value={formData.difficulty}
+                  onChange={(value) => setFormData({ ...formData, difficulty: value })}
+                  placeholder="Selectionner un grade"
+                />
+              </div>
+
+              {/* Opening Date */}
+              <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                <label className="block text-sm font-extrabold text-climb-dark mb-2">
+                  Date d'ouverture *
+                </label>
+                <p className="text-xs text-climb-dark/60 font-bold mb-2">
+                  Date a laquelle la voie a ete ouverte
+                </p>
+                <input
+                  type="date"
+                  name="openedAt"
+                  value={formData.openedAt}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold focus:outline-none focus:border-climb-dark transition-colors"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                <label className="block text-sm font-extrabold text-climb-dark mb-2">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold placeholder:text-climb-dark/40 resize-none focus:outline-none focus:border-climb-dark transition-colors"
+                  placeholder="Decrivez la voie, les types de mouvements, la difficulte..."
+                ></textarea>
+              </div>
+
+              {/* Tips */}
+              <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                <label className="block text-sm font-extrabold text-climb-dark mb-2">
+                  Conseils
+                </label>
+                <textarea
+                  name="tips"
+                  value={formData.tips}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold placeholder:text-climb-dark/40 resize-none focus:outline-none focus:border-climb-dark transition-colors"
+                  placeholder="Conseils pour reussir la voie..."
+                ></textarea>
+              </div>
+
+              {/* Photo Upload */}
+              <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                <ImageUpload
+                  onUpload={handlePhotoUpload}
+                  currentImage={formData.mainPhoto}
+                  label="Photo principale de la voie *"
+                  maxSize={10}
+                />
+              </div>
+
+              {/* Color Picker - Only shown after photo is uploaded */}
+              {formData.mainPhoto && (
+                <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                  <ColorPickerOnImage
+                    imageUrl={formData.mainPhoto}
+                    onColorSelect={handleColorSelect}
+                    selectedColor={formData.holdColorHex}
+                    colorCategory={formData.holdColorCategory}
+                  />
+                </div>
+              )}
+
+              {/* Hold Detection - Only shown after color is selected */}
+              {formData.mainPhoto && formData.holdColorHex && (
+                <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                  <label className="block text-sm font-extrabold text-climb-dark mb-3">
+                    Détection des prises
+                  </label>
+                  <HoldOverlay
+                    imageUrl={formData.mainPhoto}
+                    holdColorHex={formData.holdColorHex}
+                    onHoldsChange={(holds) =>
+                      setFormData((prev: any) => ({ ...prev, holdMapping: holds }))
+                    }
+                  />
+                </div>
+              )}
+
+              {/* Gym Layout Selector */}
+              <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                <GymLayoutSelector
+                  onSectorSelect={handleSectorSelect}
+                  selectedSector={formData.sector}
+                />
+              </div>
+
+              {/* Route Types */}
+              <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                <RouteTypeSelector
+                  selectedTypes={formData.routeTypes}
+                  onChange={handleRouteTypesChange}
+                />
+              </div>
+
+              {/* Video URL */}
+              <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+                <label className="block text-sm font-extrabold text-climb-dark mb-2">
+                  Video d'ouverture (URL YouTube, optionnel)
+                </label>
+                <input
+                  type="url"
+                  name="openingVideo"
+                  value={formData.openingVideo}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold placeholder:text-climb-dark/40 focus:outline-none focus:border-climb-dark transition-colors"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  disabled={loading}
+                  className="flex-1 bg-white text-climb-dark font-extrabold py-4 px-6 rounded-xl border-2 border-climb-dark hover:bg-cream transition-all active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-hold-green text-white font-extrabold py-4 px-6 rounded-xl border-2 border-climb-dark shadow-neo hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Creation...' : 'Creer la voie'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Right — preview (desktop only) */}
+          <div className="hidden md:block md:w-1/2 min-w-0 md:sticky md:top-32">
+            <div className="neo-card p-5">
+              <p className="text-xs font-extrabold text-climb-dark/50 uppercase tracking-wider mb-4">Aperçu</p>
+              {formData.mainPhoto ? (
+                <>
+                  <img src={formData.mainPhoto} alt="Aperçu" className="w-full rounded-xl border-2 border-climb-dark mb-4" />
+                  {formData.holdColorHex && (
+                    <div className="flex items-center gap-3 p-3 bg-cream rounded-xl border-2 border-climb-dark/20">
+                      <div className="w-8 h-8 rounded-lg border-2 border-climb-dark" style={{ backgroundColor: formData.holdColorHex }} />
+                      <div>
+                        <p className="text-xs font-bold text-climb-dark/50">Couleur des prises</p>
+                        <p className="text-sm font-extrabold text-climb-dark">{formData.holdColorHex}</p>
+                      </div>
+                    </div>
+                  )}
+                  {formData.name && (
+                    <p className="mt-3 font-extrabold text-climb-dark">{formData.name}</p>
+                  )}
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-48 bg-cream rounded-xl border-2 border-dashed border-climb-dark/20">
+                  <span className="material-symbols-outlined text-climb-dark/20 text-[48px]">add_photo_alternate</span>
+                  <p className="text-sm text-climb-dark/40 font-bold mt-2">Ajoutez une photo</p>
+                </div>
+              )}
             </div>
-          )}
-
-          {/* Name */}
-          <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-            <label className="block text-sm font-extrabold text-climb-dark mb-2">
-              Nom de la voie *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold placeholder:text-climb-dark/40 focus:outline-none focus:border-climb-dark transition-colors"
-              placeholder="Ex: La Dalle du Debutant"
-            />
           </div>
 
-          {/* Difficulty */}
-          <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-            <label className="block text-sm font-extrabold text-climb-dark mb-2">
-              Grade de difficulte (couleur de cotation) *
-            </label>
-            <p className="text-xs text-climb-dark/60 font-bold mb-3">
-              Couleur attribuee par l'ouvreur pour indiquer le niveau
-            </p>
-            <CustomSelect
-              options={DIFFICULTY_OPTIONS}
-              value={formData.difficulty}
-              onChange={(value) => setFormData({ ...formData, difficulty: value })}
-              placeholder="Selectionner un grade"
-            />
-          </div>
-
-          {/* Opening Date */}
-          <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-            <label className="block text-sm font-extrabold text-climb-dark mb-2">
-              Date d'ouverture *
-            </label>
-            <p className="text-xs text-climb-dark/60 font-bold mb-2">
-              Date a laquelle la voie a ete ouverte
-            </p>
-            <input
-              type="date"
-              name="openedAt"
-              value={formData.openedAt}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold focus:outline-none focus:border-climb-dark transition-colors"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-            <label className="block text-sm font-extrabold text-climb-dark mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={4}
-              className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold placeholder:text-climb-dark/40 resize-none focus:outline-none focus:border-climb-dark transition-colors"
-              placeholder="Decrivez la voie, les types de mouvements, la difficulte..."
-            ></textarea>
-          </div>
-
-          {/* Tips */}
-          <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-            <label className="block text-sm font-extrabold text-climb-dark mb-2">
-              Conseils
-            </label>
-            <textarea
-              name="tips"
-              value={formData.tips}
-              onChange={handleChange}
-              rows={3}
-              className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold placeholder:text-climb-dark/40 resize-none focus:outline-none focus:border-climb-dark transition-colors"
-              placeholder="Conseils pour reussir la voie..."
-            ></textarea>
-          </div>
-
-          {/* Photo Upload */}
-          <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-            <ImageUpload
-              onUpload={handlePhotoUpload}
-              currentImage={formData.mainPhoto}
-              label="Photo principale de la voie *"
-              maxSize={10}
-            />
-          </div>
-
-          {/* Color Picker - Only shown after photo is uploaded */}
-          {formData.mainPhoto && (
-            <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-              <ColorPickerOnImage
-                imageUrl={formData.mainPhoto}
-                onColorSelect={handleColorSelect}
-                selectedColor={formData.holdColorHex}
-                colorCategory={formData.holdColorCategory}
-              />
-            </div>
-          )}
-
-          {/* Hold Detection - Only shown after color is selected */}
-          {formData.mainPhoto && formData.holdColorHex && (
-            <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-              <label className="block text-sm font-extrabold text-climb-dark mb-3">
-                Détection des prises
-              </label>
-              <HoldOverlay
-                imageUrl={formData.mainPhoto}
-                holdColorHex={formData.holdColorHex}
-                onHoldsChange={(holds) =>
-                  setFormData((prev: any) => ({ ...prev, holdMapping: holds }))
-                }
-              />
-            </div>
-          )}
-
-          {/* Gym Layout Selector */}
-          <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-            <GymLayoutSelector
-              onSectorSelect={handleSectorSelect}
-              selectedSector={formData.sector}
-            />
-          </div>
-
-          {/* Route Types */}
-          <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-            <RouteTypeSelector
-              selectedTypes={formData.routeTypes}
-              onChange={handleRouteTypesChange}
-            />
-          </div>
-
-          {/* Video URL */}
-          <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
-            <label className="block text-sm font-extrabold text-climb-dark mb-2">
-              Video d'ouverture (URL YouTube, optionnel)
-            </label>
-            <input
-              type="url"
-              name="openingVideo"
-              value={formData.openingVideo}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl border-2 border-climb-dark/20 bg-cream text-climb-dark font-bold placeholder:text-climb-dark/40 focus:outline-none focus:border-climb-dark transition-colors"
-              placeholder="https://www.youtube.com/watch?v=..."
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              disabled={loading}
-              className="flex-1 bg-white text-climb-dark font-extrabold py-4 px-6 rounded-xl border-2 border-climb-dark hover:bg-cream transition-all active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-hold-green text-white font-extrabold py-4 px-6 rounded-xl border-2 border-climb-dark shadow-neo hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creation...' : 'Creer la voie'}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
