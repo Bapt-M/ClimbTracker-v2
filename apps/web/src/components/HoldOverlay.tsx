@@ -26,14 +26,21 @@ export function HoldOverlay({
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Fix 2: track previous color to avoid re-running when identity changes but value is same
+  const prevColorRef = useRef<string>('');
+  // Fix 3: track whether a drag just occurred to suppress the ghost click
+  const wasDraggingRef = useRef(false);
 
   useEffect(() => {
     if (initialHolds) setHolds(initialHolds);
   }, [initialHolds]);
 
-  // Auto-detect holds when image loads or color changes
+  // Auto-detect holds when image loads or color *actually* changes (Fix 1 + Fix 2)
   useEffect(() => {
     if (!imageLoaded || !holdColorHex) return;
+    // Fix 2: skip if color hasn't actually changed
+    if (prevColorRef.current === holdColorHex && prevColorRef.current !== '') return;
+    prevColorRef.current = holdColorHex;
 
     const canvas = canvasRef.current;
     const img = imgRef.current;
@@ -45,11 +52,10 @@ export function HoldOverlay({
     if (!ctx) return;
     ctx.drawImage(img, 0, 0);
 
-    setIsDetecting(true);
+    // Fix 1: removed synchronous setIsDetecting(true/false) — they were no-ops due to batching
     const detected = detectHolds(canvas, holdColorHex, 1.2);
     setHolds(detected);
     onHoldsChange?.(detected);
-    setIsDetecting(false);
   }, [imageLoaded, holdColorHex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const drawImageToCanvas = useCallback((): boolean => {
@@ -78,7 +84,12 @@ export function HoldOverlay({
     }
   };
 
+  // Fix 3: bail early if a drag just ended; the click is synthetic
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (wasDraggingRef.current) {
+      wasDraggingRef.current = false;
+      return;
+    }
     if (readOnly) return;
     const container = containerRef.current;
     if (!container) return;
@@ -106,6 +117,8 @@ export function HoldOverlay({
     const rect = container.getBoundingClientRect();
     const hold = holds.find(h => h.id === holdId);
     if (!hold) return;
+    // Fix 3: reset drag flag on every new press
+    wasDraggingRef.current = false;
     setDragHoldId(holdId);
     setDragOffset({
       x: hold.x - (e.clientX - rect.left) / rect.width,
@@ -115,17 +128,25 @@ export function HoldOverlay({
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!dragHoldId || readOnly) return;
+    // Fix 3: mark that a real drag is in progress
+    wasDraggingRef.current = true;
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width + dragOffset.x));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height + dragOffset.y));
     const newHolds = holds.map(h => h.id === dragHoldId ? { ...h, x, y } : h);
+    // Fix 4: update state only — onHoldsChange is called once in handleMouseUp
     setHolds(newHolds);
-    onHoldsChange?.(newHolds);
   };
 
-  const handleMouseUp = () => setDragHoldId(null);
+  // Fix 4: call onHoldsChange once when drag ends, not on every pixel
+  const handleMouseUp = () => {
+    if (dragHoldId) {
+      onHoldsChange?.(holds);
+    }
+    setDragHoldId(null);
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -166,7 +187,8 @@ export function HoldOverlay({
       {/* Image with SVG overlay */}
       <div
         ref={containerRef}
-        className="relative w-full rounded-2xl overflow-hidden border-2 border-climb-dark shadow-neo cursor-crosshair"
+        // Fix 5: no crosshair cursor in readOnly mode
+        className={`relative w-full rounded-2xl overflow-hidden border-2 border-climb-dark shadow-neo ${readOnly ? '' : 'cursor-crosshair'}`}
         style={{ aspectRatio: '4/3' }}
         onClick={handleContainerClick}
         onMouseMove={handleMouseMove}
@@ -231,7 +253,8 @@ export function HoldOverlay({
         )}
       </div>
 
-      {!readOnly && (
+      {/* Fix 6: gate hint text on imageLoaded */}
+      {!readOnly && imageLoaded && (
         <p className="text-xs text-climb-dark/60 text-center font-medium">
           Clic gauche pour ajouter · Clic droit pour supprimer · Glisser pour déplacer
         </p>
