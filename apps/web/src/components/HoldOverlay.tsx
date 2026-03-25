@@ -84,11 +84,13 @@ export function HoldOverlay({
       if (!drawImageToCanvas()) return;
       const detected = detectHolds(canvas, holdColorHex, 1.2);
       setHolds(detected);
-      onHoldsChange?.(detected);
+      onHoldsChangeRef.current?.(detected);
     } finally {
       setIsDetecting(false);
     }
   };
+
+  const lastDragHoldsRef = useRef<DetectedHold[]>([]);
 
   // Fix 3: bail early if a drag just ended; the click is synthetic
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -142,6 +144,7 @@ export function HoldOverlay({
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width + dragOffset.x));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height + dragOffset.y));
     const newHolds = holdsRef.current.map(h => h.id === dragHoldId ? { ...h, x, y } : h);
+    lastDragHoldsRef.current = newHolds;
     // Fix 4: update state only — onHoldsChange is called once in handleMouseUp
     setHolds(newHolds);
   };
@@ -149,7 +152,11 @@ export function HoldOverlay({
   // Fix 4: call onHoldsChange once when drag ends, not on every pixel
   const handleMouseUp = () => {
     if (dragHoldId) {
-      onHoldsChange?.(holdsRef.current);
+      const finalHolds = lastDragHoldsRef.current.length > 0
+        ? lastDragHoldsRef.current
+        : holdsRef.current;
+      onHoldsChangeRef.current?.(finalHolds);
+      lastDragHoldsRef.current = [];
     }
     setDragHoldId(null);
   };

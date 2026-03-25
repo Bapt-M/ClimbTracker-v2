@@ -105,12 +105,12 @@ export default function CreateRoute() {
 
   const handleColorSelect = (hexColor: string) => {
     const category = categorizeHexColor(hexColor);
-    setFormData({
-      ...formData,
+    setFormData((prev: any) => ({
+      ...prev,
       holdColorHex: hexColor,
       holdColorCategory: category,
       holdMapping: null,
-    });
+    }));
   };
 
   const handleSectorSelect = (sector: string) => {
