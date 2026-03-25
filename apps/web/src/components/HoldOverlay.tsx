@@ -34,6 +34,9 @@ export function HoldOverlay({
 
   useEffect(() => { holdsRef.current = holds; }, [holds]);
 
+  const onHoldsChangeRef = useRef(onHoldsChange);
+  useEffect(() => { onHoldsChangeRef.current = onHoldsChange; });
+
   useEffect(() => {
     if (initialHolds) setHolds(initialHolds);
   }, [initialHolds]);
@@ -58,8 +61,8 @@ export function HoldOverlay({
     // Fix 1: removed synchronous setIsDetecting(true/false) — they were no-ops due to batching
     const detected = detectHolds(canvas, holdColorHex, 1.2);
     setHolds(detected);
-    onHoldsChange?.(detected);
-  }, [imageLoaded, holdColorHex, onHoldsChange]);
+    onHoldsChangeRef.current?.(detected);
+  }, [imageLoaded, holdColorHex]);
 
   const drawImageToCanvas = useCallback((): boolean => {
     const img = imgRef.current;
@@ -106,7 +109,7 @@ export function HoldOverlay({
       radius: 0.04,
       confidence: 1,
     };
-    const next = [...holds, newHold];
+    const next = [...holdsRef.current, newHold];
     setHolds(next);
     onHoldsChange?.(next);
   };
@@ -138,7 +141,7 @@ export function HoldOverlay({
     const rect = container.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width + dragOffset.x));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height + dragOffset.y));
-    const newHolds = holds.map(h => h.id === dragHoldId ? { ...h, x, y } : h);
+    const newHolds = holdsRef.current.map(h => h.id === dragHoldId ? { ...h, x, y } : h);
     // Fix 4: update state only — onHoldsChange is called once in handleMouseUp
     setHolds(newHolds);
   };
