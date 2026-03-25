@@ -4,6 +4,7 @@ import { routesAPI } from '../lib/api';
 import { signOut } from '../lib/auth-client';
 import { ImageUpload } from '../components/ImageUpload';
 import { ColorPickerOnImage } from '../components/ColorPickerOnImage';
+import { HoldOverlay } from '../components/HoldOverlay';
 import { RouteTypeSelector } from '../components/RouteTypeSelector';
 import { GymLayoutSelector } from '../components/GymLayoutSelector';
 import { CustomSelect } from '../components/CustomSelect';
@@ -41,6 +42,7 @@ export default function CreateRoute() {
     openingVideo: '',
     routeTypes: [],
     openedAt: new Date().toISOString().split('T')[0],
+    holdMapping: null,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -264,6 +266,22 @@ export default function CreateRoute() {
                 onColorSelect={handleColorSelect}
                 selectedColor={formData.holdColorHex}
                 colorCategory={formData.holdColorCategory}
+              />
+            </div>
+          )}
+
+          {/* Hold Detection - Only shown after color is selected */}
+          {formData.mainPhoto && formData.holdColorHex && (
+            <div className="rounded-2xl bg-white p-5 border-2 border-climb-dark shadow-neo">
+              <label className="block text-sm font-extrabold text-climb-dark mb-3">
+                Détection des prises
+              </label>
+              <HoldOverlay
+                imageUrl={formData.mainPhoto}
+                holdColorHex={formData.holdColorHex}
+                onHoldsChange={(holds) =>
+                  setFormData((prev: any) => ({ ...prev, holdMapping: holds }))
+                }
               />
             </div>
           )}
