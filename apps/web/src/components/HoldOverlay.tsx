@@ -5,6 +5,7 @@ interface HoldOverlayProps {
   imageUrl: string;
   holdColorHex: string;
   initialHolds?: DetectedHold[];
+  onHoldsChange?: (holds: DetectedHold[]) => void;
   onSave?: (holds: DetectedHold[]) => void;
   readOnly?: boolean;
 }
@@ -13,13 +14,13 @@ export function HoldOverlay({
   imageUrl,
   holdColorHex,
   initialHolds,
+  onHoldsChange,
   onSave,
   readOnly = false,
 }: HoldOverlayProps) {
   const [holds, setHolds] = useState<DetectedHold[]>(initialHolds || []);
   const [isDetecting, setIsDetecting] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [addMode, setAddMode] = useState(false);
   const [dragHoldId, setDragHoldId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,6 +30,27 @@ export function HoldOverlay({
   useEffect(() => {
     if (initialHolds) setHolds(initialHolds);
   }, [initialHolds]);
+
+  // Auto-detect holds when image loads or color changes
+  useEffect(() => {
+    if (!imageLoaded || !holdColorHex) return;
+
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(img, 0, 0);
+
+    setIsDetecting(true);
+    const detected = detectHolds(canvas, holdColorHex, 1.2);
+    setHolds(detected);
+    onHoldsChange?.(detected);
+    setIsDetecting(false);
+  }, [imageLoaded, holdColorHex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const drawImageToCanvas = useCallback((): boolean => {
     const img = imgRef.current;
@@ -50,13 +72,14 @@ export function HoldOverlay({
       if (!drawImageToCanvas()) return;
       const detected = detectHolds(canvas, holdColorHex, 1.2);
       setHolds(detected);
+      onHoldsChange?.(detected);
     } finally {
       setIsDetecting(false);
     }
   };
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!addMode || readOnly) return;
+    if (readOnly) return;
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
@@ -69,14 +92,9 @@ export function HoldOverlay({
       radius: 0.04,
       confidence: 1,
     };
-    setHolds(prev => [...prev, newHold]);
-    setAddMode(false);
-  };
-
-  const handleHoldClick = (e: React.MouseEvent, holdId: string) => {
-    if (readOnly || addMode) return;
-    e.stopPropagation();
-    setHolds(prev => prev.filter(h => h.id !== holdId));
+    const next = [...holds, newHold];
+    setHolds(next);
+    onHoldsChange?.(next);
   };
 
   const handleMouseDown = (e: React.MouseEvent, holdId: string) => {
@@ -102,7 +120,9 @@ export function HoldOverlay({
     const rect = container.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width + dragOffset.x));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height + dragOffset.y));
-    setHolds(prev => prev.map(h => h.id === dragHoldId ? { ...h, x, y } : h));
+    const newHolds = holds.map(h => h.id === dragHoldId ? { ...h, x, y } : h);
+    setHolds(newHolds);
+    onHoldsChange?.(newHolds);
   };
 
   const handleMouseUp = () => setDragHoldId(null);
@@ -129,20 +149,12 @@ export function HoldOverlay({
               </span>
             )}
           </button>
-          <button
-            onClick={() => setAddMode(!addMode)}
-            className={`flex-1 btn-neo text-sm ${addMode ? 'bg-hold-yellow text-climb-dark' : 'bg-white text-climb-dark'}`}
-          >
-            <span className="flex items-center justify-center gap-1">
-              <span className="material-symbols-outlined text-[16px]">
-                {addMode ? 'touch_app' : 'add_circle'}
-              </span>
-              {addMode ? 'Cliquer pour ajouter' : 'Ajouter manuellement'}
-            </span>
-          </button>
           {holds.length > 0 && (
             <button
-              onClick={() => setHolds([])}
+              onClick={() => {
+                setHolds([]);
+                onHoldsChange?.([]);
+              }}
               className="px-3 py-2 border-2 border-hold-pink text-hold-pink rounded-xl font-bold text-sm active:scale-95"
             >
               <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -154,12 +166,13 @@ export function HoldOverlay({
       {/* Image with SVG overlay */}
       <div
         ref={containerRef}
-        className={`relative w-full rounded-2xl overflow-hidden border-2 border-climb-dark shadow-neo ${addMode ? 'cursor-crosshair' : ''}`}
+        className="relative w-full rounded-2xl overflow-hidden border-2 border-climb-dark shadow-neo cursor-crosshair"
         style={{ aspectRatio: '4/3' }}
         onClick={handleContainerClick}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onContextMenu={(e) => e.preventDefault()}
       >
         <img
           ref={imgRef}
@@ -187,8 +200,15 @@ export function HoldOverlay({
                   stroke={holdColorHex}
                   strokeWidth="0.6"
                   style={{ cursor: readOnly ? 'default' : 'grab' }}
-                  onMouseDown={e => handleMouseDown(e as any, hold.id)}
-                  onClick={e => handleHoldClick(e as any, hold.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const next = holds.filter(h => h.id !== hold.id);
+                    setHolds(next);
+                    onHoldsChange?.(next);
+                  }}
+                  onMouseDown={(e) => handleMouseDown(e as any, hold.id)}
                 />
               </g>
             ))}
@@ -211,14 +231,9 @@ export function HoldOverlay({
         )}
       </div>
 
-      {!readOnly && addMode && (
+      {!readOnly && (
         <p className="text-xs text-climb-dark/60 text-center font-medium">
-          Cliquez sur l'image pour placer une prise manuellement
-        </p>
-      )}
-      {!readOnly && !addMode && holds.length > 0 && (
-        <p className="text-xs text-climb-dark/60 text-center font-medium">
-          Glissez pour déplacer · Cliquez pour supprimer
+          Clic gauche pour ajouter · Clic droit pour supprimer · Glisser pour déplacer
         </p>
       )}
 
