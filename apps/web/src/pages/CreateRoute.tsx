@@ -96,7 +96,7 @@ export default function CreateRoute() {
   const handlePhotoUpload = async (file: File) => {
     try {
       const url = await uploadRoutePhoto(file);
-      setFormData({ ...formData, mainPhoto: url });
+      setFormData({ ...formData, mainPhoto: url, holdMapping: null });
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Failed to upload photo');
@@ -109,6 +109,7 @@ export default function CreateRoute() {
       ...formData,
       holdColorHex: hexColor,
       holdColorCategory: category,
+      holdMapping: null,
     });
   };
 
