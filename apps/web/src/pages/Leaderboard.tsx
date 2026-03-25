@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useSession, signOut } from '../lib/auth-client';
 import { BottomNav } from '../components/BottomNav';
+import { TopNav } from '../components/TopNav';
 import { LeaderboardTopUser } from '../components/LeaderboardTopUser';
 import { LeaderboardUserCard } from '../components/LeaderboardUserCard';
 import { CurrentUserRankCard } from '../components/CurrentUserRankCard';
@@ -78,10 +79,12 @@ export default function Leaderboard() {
   const otherUsers = users.slice(1);
 
   return (
-    <div className="relative min-h-screen flex flex-col w-full max-w-md mx-auto overflow-hidden bg-cream">
+    <div className="relative min-h-screen flex flex-col w-full max-w-md md:max-w-none mx-auto overflow-hidden md:overflow-visible bg-cream md:pt-16">
+      <TopNav />
+
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-cream/90 backdrop-blur-md">
-        <div className="flex items-center justify-between px-6 pt-12 pb-4">
+      <div className="sticky top-0 md:top-16 z-40 bg-cream/90 backdrop-blur-md">
+        <div className="flex items-center justify-between px-6 pt-12 md:pt-4 pb-4">
           <div>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-2xl bg-hold-yellow flex items-center justify-center border-2 border-climb-dark shadow-neo-sm rotate-3">
@@ -138,58 +141,97 @@ export default function Leaderboard() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col px-6 pb-32 gap-4 overflow-y-auto no-scrollbar">
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-hold-pink border-r-transparent"></div>
-            <p className="mt-4 text-climb-dark/60 font-bold">Chargement du classement...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-12 px-5">
-            <p className="text-climb-dark font-bold mb-4">{error}</p>
-            <button
-              onClick={loadLeaderboard}
-              className="btn-neo-primary"
-            >
-              Reessayer
-            </button>
-          </div>
-        ) : users.length === 0 ? (
-          <div className="text-center py-12 px-6">
-            {activeTab === 'friends' ? (
-              <>
-                <p className="text-climb-dark/60 font-medium mb-4">
-                  Vous n'avez pas encore d'amis ou ils n'ont pas de validations
-                </p>
+      <div className="flex-1 overflow-y-auto md:overflow-visible pb-24 md:pb-6 no-scrollbar">
+        <div className="md:flex md:gap-6 md:items-start md:px-8 md:py-4">
+
+          {/* Left — list */}
+          <div className="flex-1 min-w-0 flex flex-col px-6 md:px-0 gap-4">
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-hold-pink border-r-transparent"></div>
+                <p className="mt-4 text-climb-dark/60 font-bold">Chargement du classement...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12 px-5">
+                <p className="text-climb-dark font-bold mb-4">{error}</p>
                 <button
-                  onClick={() => navigate('/friends')}
+                  onClick={loadLeaderboard}
                   className="btn-neo-primary"
                 >
-                  Gerer mes amis
+                  Reessayer
                 </button>
-              </>
+              </div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-12 px-6">
+                {activeTab === 'friends' ? (
+                  <>
+                    <p className="text-climb-dark/60 font-medium mb-4">
+                      Vous n'avez pas encore d'amis ou ils n'ont pas de validations
+                    </p>
+                    <button
+                      onClick={() => navigate('/friends')}
+                      className="btn-neo-primary"
+                    >
+                      Gerer mes amis
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-climb-dark/60 font-medium">Aucun utilisateur classe pour le moment</p>
+                )}
+              </div>
             ) : (
-              <p className="text-climb-dark/60 font-medium">Aucun utilisateur classe pour le moment</p>
+              <>
+                {/* Top User */}
+                {topUser && (
+                  <div
+                    className="md:cursor-pointer"
+                    onClick={() => setSelectedUserId(topUser.userId)}
+                  >
+                    <LeaderboardTopUser user={topUser} />
+                  </div>
+                )}
+
+                {/* Other Users */}
+                <div className="space-y-3">
+                  {otherUsers.map((userData) => (
+                    <div
+                      key={userData.userId}
+                      className="md:cursor-pointer"
+                      onClick={() => setSelectedUserId(userData.userId)}
+                    >
+                      <LeaderboardUserCard
+                        user={userData}
+                        isCurrentUser={userData.userId === user?.id}
+                        onShowDetails={handleShowDetails}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
-        ) : (
-          <>
-            {/* Top User */}
-            {topUser && <LeaderboardTopUser user={topUser} />}
 
-            {/* Other Users */}
-            <div className="space-y-3">
-              {otherUsers.map((userData) => (
-                <LeaderboardUserCard
-                  key={userData.userId}
-                  user={userData}
-                  isCurrentUser={userData.userId === user?.id}
-                  onShowDetails={handleShowDetails}
-                />
-              ))}
-            </div>
-          </>
-        )}
+          {/* Right — profile panel (desktop only) */}
+          <div className="hidden md:block md:w-80 md:flex-shrink-0 md:sticky md:top-32">
+            {selectedUserId ? (
+              <div className="neo-card p-5">
+                <p className="text-xs font-extrabold text-climb-dark/50 uppercase tracking-wider mb-4">Profil</p>
+                <Link
+                  to={`/users/${selectedUserId}`}
+                  className="w-full flex items-center justify-center gap-2 bg-hold-blue text-white font-extrabold py-3 px-6 rounded-xl border-2 border-climb-dark shadow-neo hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                >
+                  Voir le profil complet
+                </Link>
+              </div>
+            ) : (
+              <div className="neo-card p-5 text-center">
+                <span className="material-symbols-outlined text-climb-dark/20 text-[48px]">person</span>
+                <p className="text-sm text-climb-dark/40 font-bold mt-2">Sélectionnez un grimpeur</p>
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
 
       {/* Current User Rank Card */}

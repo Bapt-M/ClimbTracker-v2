@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { signOut } from '../lib/auth-client';
 import { BottomNav } from '../components/BottomNav';
+import { TopNav } from '../components/TopNav';
 import {
   friendshipsAPI,
   FriendshipWithUser,
@@ -37,6 +38,7 @@ export default function Friends() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab === 'friends') {
@@ -136,10 +138,12 @@ export default function Friends() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col w-full max-w-md mx-auto overflow-hidden bg-cream">
+    <div className="relative min-h-screen flex flex-col w-full max-w-md md:max-w-none mx-auto overflow-hidden md:overflow-visible bg-cream md:pt-16">
+      <TopNav />
+
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-cream/90 backdrop-blur-md">
-        <div className="flex items-center justify-between px-6 pt-12 pb-4">
+      <div className="sticky top-0 md:top-16 z-40 bg-cream/90 backdrop-blur-md">
+        <div className="flex items-center justify-between px-6 pt-12 md:pt-4 pb-4">
           <div>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-2xl bg-hold-purple flex items-center justify-center border-2 border-climb-dark shadow-neo-sm rotate-3">
@@ -205,202 +209,232 @@ export default function Friends() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col p-6 pb-32 gap-4 overflow-y-auto no-scrollbar">
-        {/* Search Tab */}
-        {activeTab === 'search' && (
-          <>
-            <div className="flex gap-3">
-              <div className="flex-1 flex items-center rounded-2xl bg-white border-2 border-climb-dark shadow-neo h-12">
-                <div className="flex items-center justify-center pl-4 pr-2 text-climb-dark/40">
-                  <span className="material-symbols-outlined text-[20px]">search</span>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Rechercher par nom ou email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="flex-1 bg-transparent border-none focus:ring-0 text-climb-dark placeholder:text-climb-dark/40 text-sm py-2 pl-0 font-bold"
-                />
-              </div>
-              <button
-                onClick={handleSearch}
-                className="h-12 w-12 rounded-xl bg-hold-pink text-white border-2 border-climb-dark shadow-neo flex items-center justify-center transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
-              >
-                <span className="material-symbols-outlined">search</span>
-              </button>
-            </div>
+      <div className="flex-1 overflow-y-auto md:overflow-visible pb-24 md:pb-6 no-scrollbar">
+        <div className="md:flex md:gap-6 md:items-start md:px-8 md:py-4">
 
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-hold-pink border-r-transparent"></div>
-              </div>
-            ) : searchResults.length === 0 && searchTerm ? (
-              <div className="text-center py-12">
-                <p className="text-climb-dark/60 font-bold">Aucun utilisateur trouve</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {searchResults.map((user) => (
-                  <div
-                    key={user.id}
-                    className="relative flex items-center gap-4 p-4 pr-28 rounded-3xl bg-white border-2 border-climb-dark shadow-neo"
-                  >
-                    <div
-                      className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-2 border-climb-dark -rotate-3"
-                      style={{ backgroundColor: getAvatarColor(user.name) }}
-                    >
-                      <span className="text-white font-extrabold text-lg rotate-3">
-                        {user.name.charAt(0).toUpperCase()}
-                      </span>
+          {/* Left — list */}
+          <div className="flex-1 min-w-0 flex flex-col p-6 md:p-0 gap-4">
+            {/* Search Tab */}
+            {activeTab === 'search' && (
+              <>
+                <div className="flex gap-3">
+                  <div className="flex-1 flex items-center rounded-2xl bg-white border-2 border-climb-dark shadow-neo h-12">
+                    <div className="flex items-center justify-center pl-4 pr-2 text-climb-dark/40">
+                      <span className="material-symbols-outlined text-[20px]">search</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-extrabold text-climb-dark truncate">
-                        {user.name}
-                      </h3>
-                      <p className="text-xs text-climb-dark/50 font-bold truncate">{user.email}</p>
-                    </div>
-                    {user.friendshipStatus === null && (
-                      <button
-                        onClick={() => handleSendRequest(user.id)}
-                        className="absolute right-4 px-4 py-2 bg-hold-pink text-white text-xs font-extrabold rounded-xl border-2 border-climb-dark shadow-neo-sm transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-                      >
-                        Ajouter
-                      </button>
-                    )}
-                    {user.friendshipStatus === FriendshipStatus.PENDING && (
-                      <span className="absolute right-4 px-4 py-2 bg-hold-orange/20 text-hold-orange text-xs font-extrabold rounded-xl border-2 border-hold-orange/30">
-                        {user.isRequester ? 'Envoyee' : 'En attente'}
-                      </span>
-                    )}
-                    {user.friendshipStatus === FriendshipStatus.ACCEPTED && (
-                      <span className="absolute right-4 px-4 py-2 bg-hold-green/20 text-hold-green text-xs font-extrabold rounded-xl border-2 border-hold-green/30">
-                        Ami
-                      </span>
-                    )}
+                    <input
+                      type="text"
+                      placeholder="Rechercher par nom ou email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                      className="flex-1 bg-transparent border-none focus:ring-0 text-climb-dark placeholder:text-climb-dark/40 text-sm py-2 pl-0 font-bold"
+                    />
                   </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Pending Requests Tab */}
-        {activeTab === 'requests' && (
-          <>
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-hold-pink border-r-transparent"></div>
-              </div>
-            ) : pendingRequests.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-climb-dark/60 font-bold">Aucune demande en attente</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className="flex items-center gap-4 p-4 rounded-3xl bg-hold-orange/10 border-2 border-hold-orange shadow-neo"
-                    style={{ boxShadow: '4px 4px 0px 0px #FF8C00' }}
-                  >
-                    <div
-                      className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-2 border-climb-dark rotate-3"
-                      style={{ backgroundColor: getAvatarColor(request.user.name) }}
-                    >
-                      <span className="text-white font-extrabold text-lg -rotate-3">
-                        {request.user.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-base font-extrabold text-climb-dark">
-                        {request.user.name}
-                      </h3>
-                      <p className="text-xs text-climb-dark/50 font-bold">{request.user.email}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleAcceptRequest(request.id)}
-                        className="w-10 h-10 rounded-xl bg-hold-green text-white border-2 border-climb-dark shadow-neo-sm flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">check</span>
-                      </button>
-                      <button
-                        onClick={() => handleRejectRequest(request.id)}
-                        className="w-10 h-10 rounded-xl bg-hold-pink text-white border-2 border-climb-dark shadow-neo-sm flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">close</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Friends Tab */}
-        {activeTab === 'friends' && (
-          <>
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-hold-pink border-r-transparent"></div>
-              </div>
-            ) : friends.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="neo-card p-8 inline-block">
-                  <span className="material-symbols-outlined text-[48px] text-climb-dark/30 mb-4">
-                    group_add
-                  </span>
-                  <p className="text-climb-dark/60 font-bold mb-4">Vous n'avez pas encore d'amis</p>
                   <button
-                    onClick={() => setActiveTab('search')}
-                    className="btn-neo-primary"
+                    onClick={handleSearch}
+                    className="h-12 w-12 rounded-xl bg-hold-pink text-white border-2 border-climb-dark shadow-neo flex items-center justify-center transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
                   >
-                    Rechercher des amis
+                    <span className="material-symbols-outlined">search</span>
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {friends.map((friendship) => (
-                  <div
-                    key={friendship.id}
-                    className="flex items-center gap-4 p-4 rounded-3xl bg-hold-green/10 border-2 border-hold-green shadow-neo"
-                    style={{ boxShadow: '4px 4px 0px 0px #2ECC71' }}
-                  >
-                    <div
-                      className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-2 border-climb-dark -rotate-3"
-                      style={{ backgroundColor: getAvatarColor(friendship.user.name) }}
-                    >
-                      <span className="text-white font-extrabold text-lg rotate-3">
-                        {friendship.user.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-base font-extrabold text-climb-dark">
-                        {friendship.user.name}
-                      </h3>
-                      <p className="text-xs text-climb-dark/50 font-bold">{friendship.user.email}</p>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveFriend(friendship.id)}
-                      className="w-10 h-10 rounded-xl text-hold-pink hover:bg-hold-pink/10 border-2 border-hold-pink/30 flex items-center justify-center transition-all"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">person_remove</span>
-                    </button>
+
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-hold-pink border-r-transparent"></div>
                   </div>
-                ))}
+                ) : searchResults.length === 0 && searchTerm ? (
+                  <div className="text-center py-12">
+                    <p className="text-climb-dark/60 font-bold">Aucun utilisateur trouve</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {searchResults.map((searchUser) => (
+                      <div
+                        key={searchUser.id}
+                        className="relative flex items-center gap-4 p-4 pr-28 rounded-3xl bg-white border-2 border-climb-dark shadow-neo md:cursor-pointer"
+                        onClick={() => setSelectedUserId(searchUser.id)}
+                      >
+                        <div
+                          className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-2 border-climb-dark -rotate-3"
+                          style={{ backgroundColor: getAvatarColor(searchUser.name) }}
+                        >
+                          <span className="text-white font-extrabold text-lg rotate-3">
+                            {searchUser.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-extrabold text-climb-dark truncate">
+                            {searchUser.name}
+                          </h3>
+                          <p className="text-xs text-climb-dark/50 font-bold truncate">{searchUser.email}</p>
+                        </div>
+                        {searchUser.friendshipStatus === null && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleSendRequest(searchUser.id); }}
+                            className="absolute right-4 px-4 py-2 bg-hold-pink text-white text-xs font-extrabold rounded-xl border-2 border-climb-dark shadow-neo-sm transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                          >
+                            Ajouter
+                          </button>
+                        )}
+                        {searchUser.friendshipStatus === FriendshipStatus.PENDING && (
+                          <span className="absolute right-4 px-4 py-2 bg-hold-orange/20 text-hold-orange text-xs font-extrabold rounded-xl border-2 border-hold-orange/30">
+                            {searchUser.isRequester ? 'Envoyee' : 'En attente'}
+                          </span>
+                        )}
+                        {searchUser.friendshipStatus === FriendshipStatus.ACCEPTED && (
+                          <span className="absolute right-4 px-4 py-2 bg-hold-green/20 text-hold-green text-xs font-extrabold rounded-xl border-2 border-hold-green/30">
+                            Ami
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Pending Requests Tab */}
+            {activeTab === 'requests' && (
+              <>
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-hold-pink border-r-transparent"></div>
+                  </div>
+                ) : pendingRequests.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-climb-dark/60 font-bold">Aucune demande en attente</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingRequests.map((request) => (
+                      <div
+                        key={request.id}
+                        className="flex items-center gap-4 p-4 rounded-3xl bg-hold-orange/10 border-2 border-hold-orange shadow-neo md:cursor-pointer"
+                        style={{ boxShadow: '4px 4px 0px 0px #FF8C00' }}
+                        onClick={() => setSelectedUserId(request.user.id)}
+                      >
+                        <div
+                          className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-2 border-climb-dark rotate-3"
+                          style={{ backgroundColor: getAvatarColor(request.user.name) }}
+                        >
+                          <span className="text-white font-extrabold text-lg -rotate-3">
+                            {request.user.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-base font-extrabold text-climb-dark">
+                            {request.user.name}
+                          </h3>
+                          <p className="text-xs text-climb-dark/50 font-bold">{request.user.email}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleAcceptRequest(request.id); }}
+                            className="w-10 h-10 rounded-xl bg-hold-green text-white border-2 border-climb-dark shadow-neo-sm flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">check</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRejectRequest(request.id); }}
+                            className="w-10 h-10 rounded-xl bg-hold-pink text-white border-2 border-climb-dark shadow-neo-sm flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">close</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Friends Tab */}
+            {activeTab === 'friends' && (
+              <>
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-hold-pink border-r-transparent"></div>
+                  </div>
+                ) : friends.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="neo-card p-8 inline-block">
+                      <span className="material-symbols-outlined text-[48px] text-climb-dark/30 mb-4">
+                        group_add
+                      </span>
+                      <p className="text-climb-dark/60 font-bold mb-4">Vous n'avez pas encore d'amis</p>
+                      <button
+                        onClick={() => setActiveTab('search')}
+                        className="btn-neo-primary"
+                      >
+                        Rechercher des amis
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {friends.map((friendship) => (
+                      <div
+                        key={friendship.id}
+                        className="flex items-center gap-4 p-4 rounded-3xl bg-hold-green/10 border-2 border-hold-green shadow-neo md:cursor-pointer"
+                        style={{ boxShadow: '4px 4px 0px 0px #2ECC71' }}
+                        onClick={() => setSelectedUserId(friendship.user.id)}
+                      >
+                        <div
+                          className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-2 border-climb-dark -rotate-3"
+                          style={{ backgroundColor: getAvatarColor(friendship.user.name) }}
+                        >
+                          <span className="text-white font-extrabold text-lg rotate-3">
+                            {friendship.user.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-base font-extrabold text-climb-dark">
+                            {friendship.user.name}
+                          </h3>
+                          <p className="text-xs text-climb-dark/50 font-bold">{friendship.user.email}</p>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRemoveFriend(friendship.id); }}
+                          className="w-10 h-10 rounded-xl text-hold-pink hover:bg-hold-pink/10 border-2 border-hold-pink/30 flex items-center justify-center transition-all"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">person_remove</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {error && (
+              <div className="text-center py-4">
+                <p className="text-hold-pink text-sm font-bold">{error}</p>
               </div>
             )}
-          </>
-        )}
-
-        {error && (
-          <div className="text-center py-4">
-            <p className="text-hold-pink text-sm font-bold">{error}</p>
           </div>
-        )}
+
+          {/* Right — profile panel (desktop only) */}
+          <div className="hidden md:block md:w-80 md:flex-shrink-0 md:sticky md:top-32">
+            {selectedUserId ? (
+              <div className="neo-card p-5">
+                <p className="text-xs font-extrabold text-climb-dark/50 uppercase tracking-wider mb-4">Profil</p>
+                <Link
+                  to={`/users/${selectedUserId}`}
+                  className="w-full flex items-center justify-center gap-2 bg-hold-blue text-white font-extrabold py-3 px-6 rounded-xl border-2 border-climb-dark shadow-neo hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                >
+                  Voir le profil complet
+                </Link>
+              </div>
+            ) : (
+              <div className="neo-card p-5 text-center">
+                <span className="material-symbols-outlined text-climb-dark/20 text-[48px]">person</span>
+                <p className="text-sm text-climb-dark/40 font-bold mt-2">Sélectionnez un grimpeur</p>
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
 
       {/* Bottom Navigation */}
