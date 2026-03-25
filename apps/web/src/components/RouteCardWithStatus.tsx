@@ -233,19 +233,19 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
           {/* Content */}
           <div className="flex flex-col gap-0.5 px-0.5 pb-0.5 bg-white rounded-lg p-1.5">
             <div className="flex items-center justify-between gap-1">
-              <h3 className="text-[10px] font-extrabold text-climb-dark leading-tight truncate flex-1">
+              <h3 className="text-[10px] md:text-sm font-extrabold text-climb-dark leading-tight truncate flex-1">
                 {route.name}
               </h3>
-              <MiniGymLayout sector={route.sector} size="sm" />
+              <MiniGymLayout sector={route.sector} size="sm" className="hidden md:block" />
             </div>
             <div className="flex items-center gap-1">
               <span
-                className="text-[8px] font-extrabold px-1 py-0.5 rounded"
+                className="text-[8px] md:text-[11px] font-extrabold px-1 md:px-2 py-0.5 rounded"
                 style={{ backgroundColor: difficultyColors.bg, color: difficultyColors.color }}
               >
                 {route.difficulty}
               </span>
-              <span className="text-[8px] text-climb-dark/50 font-bold truncate">
+              <span className="text-[8px] md:text-[10px] text-climb-dark/50 font-bold truncate">
                 {route.holdColorCategory}
               </span>
             </div>
@@ -259,13 +259,13 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
             disabled={isValidating}
-            className={`absolute bottom-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 z-10 border border-climb-dark shadow-sm ${buttonStyle.bgClass} ${isValidating ? 'opacity-50 cursor-wait' : 'active:scale-95'}`}
+            className={`absolute bottom-2 right-2 w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all duration-300 z-10 border border-climb-dark shadow-sm ${buttonStyle.bgClass} ${isValidating ? 'opacity-50 cursor-wait' : 'active:scale-95'}`}
             title={currentValidation ? 'Modifier le statut' : 'Valider la voie'}
           >
             {isValidating ? (
-              <span className="material-symbols-outlined text-[12px] animate-spin">refresh</span>
+              <span className="material-symbols-outlined text-[12px] md:text-[16px] animate-spin">refresh</span>
             ) : (
-              <span className="material-symbols-outlined text-[12px] fill-1">{buttonStyle.icon}</span>
+              <span className="material-symbols-outlined text-[12px] md:text-[16px] fill-1">{buttonStyle.icon}</span>
             )}
           </button>
         </div>
@@ -294,11 +294,11 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
         onTouchStart={handlePressStart}
         onTouchEnd={handlePressEnd}
         onTouchCancel={handlePressCancel}
-        className="group relative flex flex-row h-20 rounded-2xl p-1.5 border-2 border-climb-dark shadow-neo-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-200 cursor-pointer select-none overflow-hidden"
+        className="group relative flex flex-row h-20 md:h-28 rounded-2xl p-1.5 md:p-2 border-2 border-climb-dark shadow-neo-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-200 cursor-pointer select-none overflow-hidden"
         style={{ backgroundColor: difficultyColors.light }}
       >
         {/* Image */}
-        <div className="relative w-[68px] h-full flex-shrink-0 rounded-xl overflow-hidden bg-white">
+        <div className="relative w-[68px] md:w-[110px] h-full flex-shrink-0 rounded-xl overflow-hidden bg-white">
           <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
             style={{ backgroundImage: `url(${route.mainPhoto})` }}
@@ -317,17 +317,17 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
 
         {/* Content */}
         <div className="flex flex-col justify-center flex-1 min-w-0 px-3">
-          <h3 className="text-sm font-extrabold text-climb-dark leading-tight truncate">
+          <h3 className="text-sm md:text-base font-extrabold text-climb-dark leading-tight truncate">
             {route.name}
           </h3>
           <div className="flex items-center gap-2 mt-1">
             <span
-              className="text-[11px] font-extrabold px-2 py-0.5 rounded-md whitespace-nowrap"
+              className="text-[11px] md:text-sm font-extrabold px-2 py-0.5 rounded-md whitespace-nowrap"
               style={{ backgroundColor: difficultyColors.bg, color: difficultyColors.color }}
             >
               {route.difficulty}
             </span>
-            <span className="text-[10px] text-climb-dark/50 font-bold truncate">
+            <span className="text-[10px] md:text-sm text-climb-dark/50 font-bold truncate">
               {route.opener?.name}
             </span>
           </div>

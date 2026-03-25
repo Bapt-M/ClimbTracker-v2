@@ -523,7 +523,7 @@ export const RoutesHub = () => {
                     </div>
 
                     {/* Routes List/Grid */}
-                    <div className={viewMode === 'grid' ? 'grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}>
+                    <div className={viewMode === 'grid' ? 'grid grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(180px,500px))] gap-2 md:gap-4' : 'grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(320px,500px))] gap-4'}>
                       {dateRoutes.map((route) => (
                         <RouteCardWithStatus
                           key={route.id}
