@@ -44,11 +44,21 @@ export const TopNav = () => {
   const { isPremium } = usePremiumStatus();
 
   const isActive = (path: string) => {
-    if (path === '/routes') return location.pathname === '/routes' || location.pathname.startsWith('/routes/');
-    if (path.startsWith('/users/')) return location.pathname.startsWith('/users/');
-    if (path === '/leaderboard') return location.pathname === '/leaderboard';
-    if (path === '/friends') return location.pathname === '/friends';
-    if (path === '/admin') return location.pathname === '/admin';
+    if (path === '/routes') {
+      return location.pathname === '/routes';
+    }
+    if (path.startsWith('/users/')) {
+      return location.pathname.startsWith('/users/');
+    }
+    if (path === '/leaderboard') {
+      return location.pathname === '/leaderboard';
+    }
+    if (path === '/friends') {
+      return location.pathname === '/friends';
+    }
+    if (path === '/admin') {
+      return location.pathname === '/admin';
+    }
     return location.pathname === path;
   };
 
