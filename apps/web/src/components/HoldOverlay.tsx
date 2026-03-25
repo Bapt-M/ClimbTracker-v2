@@ -240,9 +240,9 @@ export function HoldOverlay({
                     e.preventDefault();
                     e.stopPropagation();
                     if (readOnly) return;
-                    const next = holds.filter(h => h.id !== hold.id);
+                    const next = holdsRef.current.filter(h => h.id !== hold.id);
                     setHolds(next);
-                    onHoldsChange?.(next);
+                    onHoldsChangeRef.current?.(next);
                   }}
                   onMouseDown={(e) => handleMouseDown(e as any, hold.id)}
                 />
