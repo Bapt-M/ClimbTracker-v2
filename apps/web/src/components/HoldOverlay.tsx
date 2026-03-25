@@ -19,6 +19,7 @@ export function HoldOverlay({
   readOnly = false,
 }: HoldOverlayProps) {
   const [holds, setHolds] = useState<DetectedHold[]>(initialHolds || []);
+  const holdsRef = useRef<DetectedHold[]>([]);
   const [isDetecting, setIsDetecting] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [dragHoldId, setDragHoldId] = useState<string | null>(null);
@@ -30,6 +31,8 @@ export function HoldOverlay({
   const prevColorRef = useRef<string>('');
   // Fix 3: track whether a drag just occurred to suppress the ghost click
   const wasDraggingRef = useRef(false);
+
+  useEffect(() => { holdsRef.current = holds; }, [holds]);
 
   useEffect(() => {
     if (initialHolds) setHolds(initialHolds);
@@ -56,7 +59,7 @@ export function HoldOverlay({
     const detected = detectHolds(canvas, holdColorHex, 1.2);
     setHolds(detected);
     onHoldsChange?.(detected);
-  }, [imageLoaded, holdColorHex]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [imageLoaded, holdColorHex, onHoldsChange]);
 
   const drawImageToCanvas = useCallback((): boolean => {
     const img = imgRef.current;
@@ -143,7 +146,7 @@ export function HoldOverlay({
   // Fix 4: call onHoldsChange once when drag ends, not on every pixel
   const handleMouseUp = () => {
     if (dragHoldId) {
-      onHoldsChange?.(holds);
+      onHoldsChange?.(holdsRef.current);
     }
     setDragHoldId(null);
   };
@@ -226,6 +229,7 @@ export function HoldOverlay({
                   onContextMenu={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    if (readOnly) return;
                     const next = holds.filter(h => h.id !== hold.id);
                     setHolds(next);
                     onHoldsChange?.(next);
