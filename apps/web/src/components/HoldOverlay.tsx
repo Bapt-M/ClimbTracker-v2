@@ -202,7 +202,6 @@ export function HoldOverlay({
         ref={containerRef}
         // Fix 5: no crosshair cursor in readOnly mode
         className={`relative w-full rounded-2xl overflow-hidden border-2 border-climb-dark shadow-neo ${readOnly ? '' : 'cursor-crosshair'}`}
-        style={{ aspectRatio: '4/3' }}
         onClick={handleContainerClick}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -213,7 +212,7 @@ export function HoldOverlay({
           ref={imgRef}
           src={imageUrl}
           alt="Route"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="w-full h-auto block"
           onLoad={() => setImageLoaded(true)}
           crossOrigin="anonymous"
         />
