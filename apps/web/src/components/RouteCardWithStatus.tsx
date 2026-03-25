@@ -194,7 +194,7 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
           style={{ backgroundColor: difficultyColors.light }}
         >
           {/* Image */}
-          <div className="relative aspect-[5/4] w-full rounded-xl overflow-hidden bg-white">
+          <div className="relative aspect-[5/4] md:aspect-[2/1] w-full rounded-xl overflow-hidden bg-white">
             <div
               className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
               style={{ backgroundImage: `url(${route.mainPhoto})` }}
@@ -206,10 +206,10 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
             {/* Difficulty Color Badge */}
             <div className="absolute bottom-1 right-1">
               <div
-                className="w-5 h-5 rounded-lg shadow-sm border border-white flex items-center justify-center"
+                className="w-5 h-5 md:w-8 md:h-8 rounded-lg shadow-sm border border-white flex items-center justify-center"
                 style={{ backgroundColor: difficultyColors.color }}
               >
-                <span className="text-white text-[7px] font-extrabold drop-shadow-sm">
+                <span className="text-white text-[7px] md:text-[11px] font-extrabold drop-shadow-sm">
                   {route.difficulty.substring(0, 2)}
                 </span>
               </div>
@@ -217,7 +217,7 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
 
             {/* Validations Count */}
             {route.validationsCount !== undefined && route.validationsCount > 0 && (
-              <div className="absolute top-1 right-1 bg-climb-dark/80 backdrop-blur-sm text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded-full">
+              <div className="absolute top-1 right-1 bg-climb-dark/80 backdrop-blur-sm text-white text-[8px] md:text-[11px] font-extrabold px-1.5 py-0.5 rounded-full">
                 {route.validationsCount}
               </div>
             )}
@@ -225,7 +225,7 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
             {/* Hold Color Indicator */}
             {route.holdColorHex && (
               <div className="absolute bottom-1 left-1 pointer-events-none">
-                <HoldColorIndicator holdColorHex={route.holdColorHex} size={20} className="drop-shadow-md" />
+                <HoldColorIndicator holdColorHex={route.holdColorHex} size={20} className="w-5 h-5 md:w-9 md:h-9 drop-shadow-md" />
               </div>
             )}
           </div>
@@ -236,7 +236,7 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
               <h3 className="text-[10px] md:text-sm font-extrabold text-climb-dark leading-tight truncate flex-1">
                 {route.name}
               </h3>
-              <MiniGymLayout sector={route.sector} size="sm" className="hidden md:block" />
+              <MiniGymLayout sector={route.sector} size="md" className="hidden md:block" />
             </div>
             <div className="flex items-center gap-1">
               <span
@@ -294,11 +294,11 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
         onTouchStart={handlePressStart}
         onTouchEnd={handlePressEnd}
         onTouchCancel={handlePressCancel}
-        className="group relative flex flex-row h-20 md:h-28 rounded-2xl p-1.5 md:p-2 border-2 border-climb-dark shadow-neo-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-200 cursor-pointer select-none overflow-hidden"
+        className="group relative flex flex-row h-20 md:h-32 rounded-2xl p-1.5 md:p-2 border-2 border-climb-dark shadow-neo-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-200 cursor-pointer select-none overflow-hidden"
         style={{ backgroundColor: difficultyColors.light }}
       >
         {/* Image */}
-        <div className="relative w-[68px] md:w-[110px] h-full flex-shrink-0 rounded-xl overflow-hidden bg-white">
+        <div className="relative w-[68px] md:w-[88px] h-full flex-shrink-0 rounded-xl overflow-hidden bg-white">
           <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
             style={{ backgroundImage: `url(${route.mainPhoto})` }}
@@ -310,7 +310,7 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
           {/* Hold Color Indicator */}
           {route.holdColorHex && (
             <div className="absolute bottom-1 left-1 pointer-events-none">
-              <HoldColorIndicator holdColorHex={route.holdColorHex} size={22} className="drop-shadow-md" />
+              <HoldColorIndicator holdColorHex={route.holdColorHex} size={22} className="w-6 h-6 md:w-11 md:h-11 drop-shadow-md" />
             </div>
           )}
         </div>
@@ -335,7 +335,8 @@ const RouteCardWithStatusComponent = ({ route, viewMode = 'list', onStatusChange
 
         {/* Right side: SVG + Button */}
         <div className="flex items-center gap-2 pr-1">
-          <MiniGymLayout sector={route.sector} />
+          <MiniGymLayout sector={route.sector} className="md:hidden" />
+          <MiniGymLayout sector={route.sector} size="lg" className="hidden md:block" />
 
           {/* Quick Validate Button */}
           <button

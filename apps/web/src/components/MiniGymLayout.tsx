@@ -34,7 +34,7 @@ const fetchGymLayoutSvg = async (): Promise<string> => {
 interface MiniGymLayoutProps {
   sector: string;
   className?: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const MiniGymLayoutComponent = ({ sector, className = '', size = 'md' }: MiniGymLayoutProps) => {
@@ -124,7 +124,7 @@ const MiniGymLayoutComponent = ({ sector, className = '', size = 'md' }: MiniGym
     }
   }, [rawSvg, sector]);
 
-  const sizeClasses = size === 'sm' ? 'w-8 h-10' : 'w-16 h-20';
+  const sizeClasses = size === 'sm' ? 'w-8 h-10' : size === 'lg' ? 'w-20 h-24' : 'w-16 h-20';
 
   return (
     <div
