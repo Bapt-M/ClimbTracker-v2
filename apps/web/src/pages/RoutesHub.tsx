@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { routesAPI, Route, RouteFilters } from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
 import { BottomNav } from '../components/BottomNav';
+import { TopNav } from '../components/TopNav';
 import { RouteCardWithStatus, ValidationData } from '../components/RouteCardWithStatus';
 import { GymLayoutFilter } from '../components/GymLayoutFilter';
 import { ValidationStatusFilter } from '../components/ValidationStatusFilter';
@@ -350,10 +351,12 @@ export const RoutesHub = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col w-full max-w-md mx-auto overflow-hidden bg-cream">
+    <div className="relative min-h-screen flex flex-col w-full max-w-md md:max-w-none mx-auto overflow-hidden md:overflow-visible bg-cream md:pt-16">
+      <TopNav />
+
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-cream/90 backdrop-blur-md">
-        <div className="flex items-center justify-between px-6 pt-12 pb-4">
+      <div className="sticky top-0 md:top-16 z-40 bg-cream/90 backdrop-blur-md md:px-8">
+        <div className="flex items-center justify-between px-6 pt-12 md:pt-4 pb-4">
           <div>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-2xl bg-hold-blue flex items-center justify-center border-2 border-climb-dark shadow-neo-sm -rotate-3">
@@ -417,52 +420,13 @@ export const RoutesHub = () => {
             </button>
           </div>
         </div>
-
-        {/* Filters */}
-        {showFilters && (
-          <div className="px-6 pb-4 space-y-4">
-            {/* Grade Filter */}
-            <GradeFilter
-              selectedGrades={selectedGrades}
-              onGradesChange={handleGradesChange}
-            />
-
-            {/* Hold Color Filter */}
-            <HoldColorFilter
-              selectedColors={selectedHoldColors}
-              onColorsChange={handleHoldColorsChange}
-            />
-
-            {/* Gym Layout Filter */}
-            <GymLayoutFilter
-              selectedSectors={selectedSectors}
-              onSectorsChange={handleSectorsChange}
-            />
-
-            {/* Validation Status Filter */}
-            <ValidationStatusFilter
-              selectedStatuses={selectedStatuses}
-              onStatusesChange={handleStatusesChange}
-              showFavoriteFilter={true}
-              isFavoriteOnly={isFavoriteOnly}
-              onFavoriteChange={handleFavoriteChange}
-            />
-
-            {/* Date Filter */}
-            <DateFilter
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-              onDateChange={handleDateChange}
-            />
-          </div>
-        )}
       </div>
 
       {/* Content */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-24"
+        className="flex-1 min-h-0 overflow-y-auto md:overflow-visible no-scrollbar pb-24 md:pb-6"
       >
         {loading ? (
           <div className="text-center py-12">
@@ -473,7 +437,7 @@ export const RoutesHub = () => {
           <div className="text-center py-12 px-5">
             <p className="text-climb-dark font-bold mb-4">{error}</p>
             <button
-              onClick={loadRoutes}
+              onClick={() => loadRoutes()}
               className="btn-neo-primary"
             >
               Réessayer
@@ -491,42 +455,93 @@ export const RoutesHub = () => {
             </div>
           </div>
         ) : (
-          <div className={`pt-2 pb-8 space-y-4 ${viewMode === 'grid' ? 'px-3' : 'px-4'}`}>
-            {groupedRoutes.map(({ date, routes: dateRoutes }) => (
-              <div key={date}>
-                {/* Date Separator */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border-2 border-climb-dark/20">
-                    <span className="material-symbols-outlined text-hold-blue text-[16px]">
-                      calendar_today
-                    </span>
-                    <span className="text-sm font-extrabold text-climb-dark capitalize">
-                      {formatDateHeader(date)}
-                    </span>
-                    <span className="text-xs font-bold text-climb-dark/50">
-                      ({dateRoutes.length})
-                    </span>
-                  </div>
-                  <div className="flex-1 h-0.5 bg-climb-dark/10 rounded-full"></div>
-                </div>
+          <div className="md:flex md:items-start md:gap-6 md:px-8 md:py-6">
 
-                {/* Routes List/Grid */}
-                <div className={viewMode === 'grid' ? 'grid grid-cols-3 gap-2' : 'flex flex-col gap-2'}>
-                  {dateRoutes.map((route) => (
-                    <RouteCardWithStatus
-                      key={route.id}
-                      route={route}
-                      viewMode={viewMode}
-                      initialValidation={validationsByRouteId.get(route.id)}
-                      onStatusChange={() => {
-                        // Only refresh validations - routes don't change when validating
-                        loadUserValidations();
-                      }}
+            {/* Left column — filter sidebar (sticky on desktop) */}
+            <div className="md:w-72 md:flex-shrink-0 md:sticky md:top-32">
+              <div className="md:neo-card md:p-4">
+                {/* Filters — visible on mobile only when showFilters is true; always visible on desktop */}
+                {(showFilters || true) && (
+                  <div className={`${showFilters ? 'block' : 'hidden md:block'} px-6 md:px-0 pb-4 md:pb-0 space-y-4`}>
+                    {/* Grade Filter */}
+                    <GradeFilter
+                      selectedGrades={selectedGrades}
+                      onGradesChange={handleGradesChange}
                     />
-                  ))}
-                </div>
+
+                    {/* Hold Color Filter */}
+                    <HoldColorFilter
+                      selectedColors={selectedHoldColors}
+                      onColorsChange={handleHoldColorsChange}
+                    />
+
+                    {/* Gym Layout Filter */}
+                    <GymLayoutFilter
+                      selectedSectors={selectedSectors}
+                      onSectorsChange={handleSectorsChange}
+                    />
+
+                    {/* Validation Status Filter */}
+                    <ValidationStatusFilter
+                      selectedStatuses={selectedStatuses}
+                      onStatusesChange={handleStatusesChange}
+                      showFavoriteFilter={true}
+                      isFavoriteOnly={isFavoriteOnly}
+                      onFavoriteChange={handleFavoriteChange}
+                    />
+
+                    {/* Date Filter */}
+                    <DateFilter
+                      dateFrom={dateFrom}
+                      dateTo={dateTo}
+                      onDateChange={handleDateChange}
+                    />
+                  </div>
+                )}
               </div>
-            ))}
+            </div>
+
+            {/* Right column — route cards grid */}
+            <div className="flex-1 min-w-0">
+              <div className={`pt-2 pb-8 space-y-4 md:pt-0 md:pb-0 ${viewMode === 'grid' ? 'px-3 md:px-0' : 'px-4 md:px-0'}`}>
+                {groupedRoutes.map(({ date, routes: dateRoutes }) => (
+                  <div key={date}>
+                    {/* Date Separator */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border-2 border-climb-dark/20">
+                        <span className="material-symbols-outlined text-hold-blue text-[16px]">
+                          calendar_today
+                        </span>
+                        <span className="text-sm font-extrabold text-climb-dark capitalize">
+                          {formatDateHeader(date)}
+                        </span>
+                        <span className="text-xs font-bold text-climb-dark/50">
+                          ({dateRoutes.length})
+                        </span>
+                      </div>
+                      <div className="flex-1 h-0.5 bg-climb-dark/10 rounded-full"></div>
+                    </div>
+
+                    {/* Routes List/Grid */}
+                    <div className={viewMode === 'grid' ? 'grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}>
+                      {dateRoutes.map((route) => (
+                        <RouteCardWithStatus
+                          key={route.id}
+                          route={route}
+                          viewMode={viewMode}
+                          initialValidation={validationsByRouteId.get(route.id)}
+                          onStatusChange={() => {
+                            // Only refresh validations - routes don't change when validating
+                            loadUserValidations();
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         )}
       </div>
