@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { analysisAPI, Analysis } from '../lib/api';
 import { TopNav } from '../components/TopNav';
+import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
+import { PoseAnalysisPlayer } from '../components/PoseAnalysisPlayer';
+import { PoseMetricsCharts } from '../components/PoseMetricsCharts';
+import { usePoseMetrics } from '../hooks/usePoseMetrics';
 
 function GlobalScoreCircle({ score }: { score: number }) {
   const color =
@@ -65,6 +69,13 @@ export default function AnalysisResults() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { frames, addFrame, reset } = usePoseMetrics();
+  const [currentT, setCurrentT] = useState(0);
+
+  const handleLandmarks = (landmarks: NormalizedLandmark[], t: number) => {
+    addFrame(landmarks, t);
+    setCurrentT(t);
+  };
 
   useEffect(() => {
     if (id) load();
@@ -218,6 +229,28 @@ export default function AnalysisResults() {
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             Retour à la voie
           </Link>
+        )}
+
+        {analysis.video?.url && (
+          <div className="neo-card p-5 space-y-3">
+            <h2 className="font-extrabold text-climb-dark flex items-center gap-2">
+              <span className="material-symbols-outlined text-hold-blue text-[20px]">accessibility</span>
+              Analyse de mouvement
+            </h2>
+            <PoseAnalysisPlayer
+              videoUrl={analysis.video.url}
+              onLandmarks={handleLandmarks}
+              onSeek={reset}
+            />
+            {frames.length === 0 && (
+              <p className="text-sm text-climb-dark/50 text-center py-4">
+                Lance la vidéo pour voir l'analyse de mouvement
+              </p>
+            )}
+            {frames.length > 10 && (
+              <PoseMetricsCharts frames={frames} currentT={currentT} />
+            )}
+          </div>
         )}
       </div>
     </div>
