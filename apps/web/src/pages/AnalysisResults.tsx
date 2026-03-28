@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { analysisAPI, Analysis } from '../lib/api';
 import { TopNav } from '../components/TopNav';
@@ -72,10 +72,13 @@ export default function AnalysisResults() {
   const { frames, addFrame, reset } = usePoseMetrics();
   const [currentT, setCurrentT] = useState(0);
 
-  const handleLandmarks = (landmarks: NormalizedLandmark[], t: number) => {
-    addFrame(landmarks, t);
-    setCurrentT(t);
-  };
+  const handleLandmarks = useCallback(
+    (landmarks: NormalizedLandmark[], ts: number, videoTime: number) => {
+      addFrame(landmarks, ts, videoTime);
+      setCurrentT(videoTime);
+    },
+    [addFrame],
+  );
 
   useEffect(() => {
     if (id) load();

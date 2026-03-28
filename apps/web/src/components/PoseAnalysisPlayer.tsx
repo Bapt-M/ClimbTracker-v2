@@ -81,7 +81,7 @@ async function getPoseLandmarker(): Promise<PoseLandmarker> {
 
 interface PoseAnalysisPlayerProps {
   videoUrl: string;
-  onLandmarks: (landmarks: NormalizedLandmark[], timestampMs: number) => void;
+  onLandmarks: (landmarks: NormalizedLandmark[], timestampMs: number, videoTime: number) => void;
   onSeek?: () => void;
 }
 
@@ -151,7 +151,7 @@ export function PoseAnalysisPlayer({ videoUrl, onLandmarks, onSeek }: PoseAnalys
 
         if (result.landmarks[0]) {
           drawSkeleton(ctx, result.landmarks[0], canvas.width, canvas.height);
-          onLandmarks(result.landmarks[0], performance.now());
+          onLandmarks(result.landmarks[0], performance.now(), video.currentTime);
         }
       } catch (e) {
         if (e instanceof DOMException && e.name === 'SecurityError') {

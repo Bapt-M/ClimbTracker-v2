@@ -3,7 +3,8 @@ import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { angleDeg, computeArmBalance, type Landmark } from '../lib/pose-math';
 
 export interface PoseFrame {
-  t: number;
+  t: number;           // performance.now() ms — used internally by MediaPipe
+  videoTime: number;   // video.currentTime in seconds — used for chart X axis
   elbowL: number;
   elbowR: number;
   kneeL: number;
@@ -20,11 +21,12 @@ export function usePoseMetrics() {
   const [frames, setFrames] = useState<PoseFrame[]>([]);
   const prevLandmarksRef = useRef<Landmark[] | null>(null);
 
-  const addFrame = useCallback((landmarks: NormalizedLandmark[], t: number) => {
+  const addFrame = useCallback((landmarks: NormalizedLandmark[], t: number, videoTime: number) => {
     const lm = landmarks as Landmark[];
 
     const frame: PoseFrame = {
       t,
+      videoTime,
       // Elbows: shoulder – elbow – wrist
       elbowL: angleDeg(lm[11], lm[13], lm[15]),
       elbowR: angleDeg(lm[12], lm[14], lm[16]),
