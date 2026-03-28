@@ -28,7 +28,7 @@ if (useCloudinary) {
 app.post('/analyze-video', requireAuth, async (c) => {
   const user = c.get('user');
 
-  if (!env.ANTHROPIC_API_KEY) {
+  if (!env.GOOGLE_API_KEY) {
     return c.json({ success: false, error: 'AI analysis not configured' }, 503);
   }
 

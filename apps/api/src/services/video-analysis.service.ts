@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../env';
 
 export interface AnalysisScores {
@@ -42,22 +42,32 @@ export function extractCloudinaryFrames(videoPublicId: string, count: number = 5
 }
 
 /**
- * Analyze climbing video frames using Claude Vision
+ * Analyze climbing video frames using Gemini Vision
  */
 export async function analyzeWithClaude(
   frameUrls: string[],
   routeName: string
 ): Promise<ClaudeAnalysisResult> {
-  if (!env.ANTHROPIC_API_KEY) {
-    throw new Error('Anthropic API key not configured');
+  if (!env.GOOGLE_API_KEY) {
+    throw new Error('Google API key not configured');
   }
 
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  const genAI = new GoogleGenerativeAI(env.GOOGLE_API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
-  const imageContent: Anthropic.ImageBlockParam[] = frameUrls.map(url => ({
-    type: 'image',
-    source: { type: 'url', url },
-  }));
+  // Fetch frames and convert to base64 inline data
+  const imageParts = await Promise.all(
+    frameUrls.map(async (url) => {
+      const response = await fetch(url);
+      const buffer = await response.arrayBuffer();
+      return {
+        inlineData: {
+          mimeType: 'image/jpeg' as const,
+          data: Buffer.from(buffer).toString('base64'),
+        },
+      };
+    })
+  );
 
   const prompt = `Tu es un coach d'escalade de bloc expert. Analyse ces ${frameUrls.length} frames extraites d'une vidéo de grimpe.
 
@@ -90,47 +100,26 @@ IMPORTANT : Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou a
   ]
 }`;
 
-  const stream = client.messages.stream({
-    model: 'claude-opus-4-6',
-    max_tokens: 2048,
-    thinking: { type: 'adaptive' },
-    messages: [
-      {
-        role: 'user',
-        content: [
-          ...imageContent,
-          { type: 'text', text: prompt },
-        ],
-      },
-    ],
-  });
-
-  const response = await stream.finalMessage();
-
-  // Extract the text content (skip thinking blocks)
-  const textBlock = response.content.find(b => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('No text response from Claude');
-  }
+  const result = await model.generateContent([...imageParts, { text: prompt }]);
+  const text = result.response.text().trim();
 
   // Parse JSON response
-  const jsonText = textBlock.text.trim();
-  const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    throw new Error('Could not extract JSON from Claude response');
+    throw new Error('Could not extract JSON from Gemini response');
   }
 
-  const result = JSON.parse(jsonMatch[0]) as ClaudeAnalysisResult;
+  const parsed = JSON.parse(jsonMatch[0]) as ClaudeAnalysisResult;
 
   // Validate and clamp scores
   for (const key of ['fluidite', 'technique', 'precision', 'endurance', 'creativite'] as const) {
-    result.scores[key] = Math.max(0, Math.min(100, Math.round(result.scores[key] ?? 50)));
+    parsed.scores[key] = Math.max(0, Math.min(100, Math.round(parsed.scores[key] ?? 50)));
   }
 
-  if (!Array.isArray(result.suggestions)) result.suggestions = [];
-  if (!Array.isArray(result.highlights)) result.highlights = [];
+  if (!Array.isArray(parsed.suggestions)) parsed.suggestions = [];
+  if (!Array.isArray(parsed.highlights)) parsed.highlights = [];
 
-  return result;
+  return parsed;
 }
 
 /**
