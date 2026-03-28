@@ -11,7 +11,7 @@ L'application dispose d'un flow d'analyse vidéo existant :
 - `AnalysisResults.tsx` affiche les scores Claude (globalScore, 5 dimensions, suggestions, highlights)
 - `poseData` existe déjà en base (JSONB vide actuellement)
 
-Cette feature est **100% frontend** — aucun changement backend. La vidéo Cloudinary est déjà disponible dans les données d'analyse.
+Cette feature est **100% frontend** — à l'exception d'un ajout mineur côté API pour exposer l'URL vidéo. La vidéo Cloudinary est stockée mais son URL n'est pas encore retournée dans `GET /api/analysis/:id`.
 
 ## Stack
 
@@ -22,6 +22,28 @@ Cette feature est **100% frontend** — aucun changement backend. La vidéo Clou
 
 ---
 
+## Changement backend requis
+
+### `apps/api/src/routes/analyses.ts` — `GET /api/analysis/:id`
+
+Ajouter `url: true` dans les colonnes video de la query Drizzle :
+
+```ts
+video: {
+  columns: { id: true, url: true, thumbnailUrl: true, uploadedAt: true },
+},
+```
+
+### `apps/web/src/lib/api/index.ts` — type `Analysis`
+
+Ajouter `url` dans le type `video` :
+
+```ts
+video?: { id: string; url: string; thumbnailUrl: string; uploadedAt: string };
+```
+
+---
+
 ## Architecture
 
 ```
@@ -29,7 +51,7 @@ AnalysisResults.tsx
   ├── [existant] Score global + détails Claude
   └── [nouveau] Section "Analyse de mouvement"
         ├── PoseAnalysisPlayer.tsx
-        │     ├── <video> src=Cloudinary URL crossOrigin="anonymous"
+        │     ├── <video> src=analysis.video.url crossOrigin="anonymous"
         │     ├── <canvas> overlay absolu (même dimensions)
         │     └── PoseLandmarker (MediaPipe lite)
         │           → detectForVideo() à chaque frame via requestAnimationFrame
@@ -66,6 +88,8 @@ AnalysisResults.tsx
 |---|---|
 | `apps/web/src/pages/AnalysisResults.tsx` | Ajout section "Analyse de mouvement" sous les scores Claude |
 | `apps/web/package.json` | Ajout `@mediapipe/tasks-vision` |
+| `apps/api/src/routes/analyses.ts` | Expose `url` dans la projection video du GET `/:id` |
+| `apps/web/src/lib/api/index.ts` | Ajoute `url: string` dans le type `Analysis.video` |
 
 ---
 
@@ -94,10 +118,19 @@ interface PoseAnalysisPlayerProps {
 - Keypoints = cercles `r=4` pleins
 - Segment masqué si confidence < 0.5 (pas de lignes fantômes)
 
-### État de chargement
+### États de chargement et d'erreur
 
-- Badge overlay "Chargement du modèle..." pendant le premier chargement
+- **Chargement** : badge overlay "Chargement du modèle..." pendant le premier chargement
+- **Erreur modèle** : si le chargement du modèle échoue, affiche un message d'erreur fixe dans l'overlay et arrête la boucle RAF — l'utilisateur peut recharger la page
+- **Erreur CORS / SecurityError** : si `detectForVideo()` lève une `SecurityError` (cross-origin), affiche "Vidéo non accessible (CORS)" avec une note que le lecteur s'appuie sur les URL Cloudinary déjà cross-origin
 - Le modèle est mis en cache après la première init (navigation entre pages sans re-téléchargement)
+
+### Nettoyage (unmount)
+
+- La boucle RAF est annulée via `cancelAnimationFrame(rafId.current)`
+- `poseLandmarker.close()` est appelé si l'instance n'est pas le cache module-level partagé (ne pas fermer le cache)
+- Le `ResizeObserver` est déconnecté via `observer.disconnect()`
+- Tout cela dans le `return` du `useEffect` d'initialisation
 
 ---
 
@@ -152,7 +185,9 @@ cog = 1 - ((hip_L.y + hip_R.y) / 2)
 **Balance bras/jambes :**
 - `velUpper` = vélocité frame-to-frame moyenne de {épaules, coudes, poignets}
 - `velLower` = vélocité frame-to-frame moyenne de {hanches, genoux, chevilles}
+- `ε = 1e-6` (constante définie dans le hook)
 - `armBalance = velUpper / (velUpper + velLower + ε)`
+- Si les deux vélocités sont nulles (première frame ou vidéo statique) : `armBalance = 0.5` (position neutre)
 
 **Limites :**
 - Max 2000 frames en mémoire (tronque les plus anciennes au-delà)
@@ -180,12 +215,14 @@ interface PoseMetricsChartsProps {
   - Hanche G/D (orange clair/foncé)
 - Ligne verticale rouge = position actuelle dans la vidéo
 - Légende inline (petits carrés de couleur + labels)
+- Hauteur : `h-48` (6 lignes + légende nécessitent plus d'espace que `h-32`)
 
 ### Graphique 2 — Centre de gravité
 
 - Axe y : 0 (bas) → 1 (haut)
 - Courbe lissée (moyenne glissante 5 frames)
 - Zone `fill` sous la courbe en dégradé bleu semi-transparent
+- Hauteur : `h-32`
 - Indique la progression verticale du grimpeur
 
 ### Graphique 3 — Balance bras/jambes
@@ -195,12 +232,12 @@ interface PoseMetricsChartsProps {
 - Zone verte semi-transparente pour valeurs < 0.4 (bonne utilisation jambes)
 - Zone neutre 0.4-0.6 en gris clair
 - Label "Sur-utilisation bras" / "Bonne technique jambes" en overlay
+- Hauteur : `h-32`
 
 ### Style commun
 
 - Fond `bg-white`, `border-2 border-climb-dark shadow-neo rounded-2xl p-4`
 - Titre `text-sm font-extrabold text-climb-dark`
-- Graphiques `w-full h-32`
 
 ---
 
@@ -224,21 +261,23 @@ const handleLandmarks = (landmarks: NormalizedLandmark[], t: number) => {
 
 **Ajout dans le JSX** (sous les scores Claude) :
 ```tsx
-<div className="neo-card p-5">
-  <h2>Analyse de mouvement</h2>
-  <PoseAnalysisPlayer
-    videoUrl={analysis.video.videoUrl}
-    onLandmarks={handleLandmarks}
-  />
-  {frames.length === 0 && (
-    <p className="text-sm text-climb-dark/50 text-center py-4">
-      Lance la vidéo pour voir l'analyse de mouvement
-    </p>
-  )}
-  {frames.length > 10 && (
-    <PoseMetricsCharts frames={frames} currentT={currentT} />
-  )}
-</div>
+{analysis.video?.url && (
+  <div className="neo-card p-5">
+    <h2>Analyse de mouvement</h2>
+    <PoseAnalysisPlayer
+      videoUrl={analysis.video.url}
+      onLandmarks={handleLandmarks}
+    />
+    {frames.length === 0 && (
+      <p className="text-sm text-climb-dark/50 text-center py-4">
+        Lance la vidéo pour voir l'analyse de mouvement
+      </p>
+    )}
+    {frames.length > 10 && (
+      <PoseMetricsCharts frames={frames} currentT={currentT} />
+    )}
+  </div>
+)}
 ```
 
 **Seek handler** : `<video onSeeked={reset} />` via ref passée à PoseAnalysisPlayer.
@@ -247,7 +286,6 @@ const handleLandmarks = (landmarks: NormalizedLandmark[], t: number) => {
 
 ## Ce qui ne change pas
 
-- Backend inchangé (analyses, vidéos, Claude)
 - `poseData` reste vide (feature future)
 - Flow d'upload `AnalyzeVideo.tsx` inchangé
 - Scores Claude et affichage existant inchangés
