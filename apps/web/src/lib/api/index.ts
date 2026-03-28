@@ -737,7 +737,7 @@ export interface Analysis {
   suggestions: string[];
   highlights: string[];
   createdAt: string;
-  video?: { id: string; thumbnailUrl: string; uploadedAt: string };
+  video?: { id: string; url: string; thumbnailUrl: string; uploadedAt: string };
   route?: { id: string; name: string; difficulty: string; mainPhoto: string };
 }
 

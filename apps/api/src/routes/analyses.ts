@@ -204,7 +204,7 @@ app.get('/:id', requireAuth, async (c) => {
     where: eq(analyses.id, id),
     with: {
       video: {
-        columns: { id: true, thumbnailUrl: true, uploadedAt: true },
+        columns: { id: true, url: true, thumbnailUrl: true, uploadedAt: true },
       },
       route: {
         columns: { id: true, name: true, difficulty: true, mainPhoto: true },
