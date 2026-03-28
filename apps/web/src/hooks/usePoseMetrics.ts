@@ -39,7 +39,7 @@ export function usePoseMetrics() {
       armBalance: computeArmBalance(prevLandmarksRef.current, lm),
     };
 
-    prevLandmarksRef.current = lm;
+    prevLandmarksRef.current = landmarks.map(l => ({ ...l }));
 
     setFrames(prev => {
       const next = [...prev, frame];
