@@ -1,3 +1,6 @@
+import { writeFileSync, unlinkSync } from 'fs';
+import { tmpdir } from 'os';
+import { join, extname } from 'path';
 import { Hono } from 'hono';
 import { db } from '../lib/auth';
 import { videos, analyses, routes } from '@climbtracker/database/schema';
@@ -6,8 +9,7 @@ import { eq, desc, inArray } from 'drizzle-orm';
 import { env } from '../env';
 import { v2 as cloudinary } from 'cloudinary';
 import {
-  extractCloudinaryFrames,
-  analyzeWithClaude,
+  analyzeVideoWithGemini,
   aggregateScores,
 } from '../services/video-analysis.service';
 
@@ -30,6 +32,13 @@ app.post('/analyze-video', requireAuth, async (c) => {
 
   if (!env.GOOGLE_API_KEY) {
     return c.json({ success: false, error: 'AI analysis not configured' }, 503);
+  }
+
+  if (!useCloudinary) {
+    return c.json({
+      success: false,
+      error: 'Video analysis requires Cloudinary to be configured.',
+    }, 503);
   }
 
   try {
@@ -66,50 +75,46 @@ app.post('/analyze-video', requireAuth, async (c) => {
       return c.json({ success: false, error: 'Route not found' }, 404);
     }
 
-    let videoUrl: string;
-    let thumbnailUrl: string;
-    let videoPublicId: string;
+    // Write video to temp file — shared by Cloudinary upload and Gemini File API
+    const ext = extname(videoFile.name || '.mp4') || '.mp4';
+    const tmpPath = join(tmpdir(), `climbtracker_${crypto.randomUUID()}${ext}`);
+    const buffer = Buffer.from(await videoFile.arrayBuffer());
+    writeFileSync(tmpPath, buffer);
 
-    if (useCloudinary) {
-      // Upload video to Cloudinary
-      const buffer = Buffer.from(await videoFile.arrayBuffer());
-      const base64 = buffer.toString('base64');
-      const dataUri = `data:${videoFile.type};base64,${base64}`;
+    // Use definite assignment (!) — TypeScript cannot prove assignment through try/finally,
+    // but if these are unset the outer catch returns a 500 before they are used.
+    let videoUrl!: string;
+    let thumbnailUrl!: string;
+    let claudeResult!: Awaited<ReturnType<typeof analyzeVideoWithGemini>>;
 
-      const result = await cloudinary.uploader.upload(dataUri, {
+    try {
+      const result = await cloudinary.uploader.upload(tmpPath, {
         folder: 'climbtracker/videos',
         resource_type: 'video',
         eager: [{ format: 'jpg', transformation: [{ width: 400 }] }],
         eager_async: true,
       });
-
       videoUrl = result.secure_url;
-      videoPublicId = result.public_id;
-      thumbnailUrl = result.secure_url.replace(/\.[^.]+$/, '.jpg').replace('/video/upload/', '/video/upload/so_10p/');
-    } else {
-      // Fallback: we can't extract frames without Cloudinary
-      return c.json({
-        success: false,
-        error: 'Video analysis requires Cloudinary to be configured.',
-      }, 503);
+      thumbnailUrl = result.secure_url
+        .replace(/\.[^.]+$/, '.jpg')
+        .replace('/video/upload/', '/video/upload/so_10p/');
+
+      claudeResult = await analyzeVideoWithGemini(tmpPath, videoFile.type, route.name);
+    } finally {
+      try { unlinkSync(tmpPath); } catch {}
     }
+
+    const scores = aggregateScores(claudeResult);
 
     // Create video record
     const videoId = crypto.randomUUID();
     await db.insert(videos).values({
       id: videoId,
       url: videoUrl,
-      thumbnailUrl,
+      thumbnailUrl: thumbnailUrl || videoUrl,
       userId: user.id,
       routeId,
     });
-
-    // Extract frames for analysis
-    const frameUrls = extractCloudinaryFrames(videoPublicId, 5);
-
-    // Analyze with Claude
-    const claudeResult = await analyzeWithClaude(frameUrls, route.name);
-    const scores = aggregateScores(claudeResult);
 
     // Store analysis
     const analysisId = crypto.randomUUID();
